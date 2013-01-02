@@ -228,7 +228,7 @@ int ReaderWriteToFile(const std::string& in, const std::string& out, FileTypes i
 		case FileType_Invalid:
 		{
 			std::cerr << in << " unsupported" << std::endl;
-			break;
+			return 2;
 		}
 	}
 

@@ -116,7 +116,6 @@ FileTypes GetFiletype(const std::string& in_file, std::string& out_extension)
 	in.seekg(1, std::ios::beg);
 	in.read(buf, 10);
 	std::string input(buf);
-	//std::cout << buf << std::endl;
 
 	out_extension = ".xml";
 	if (input == "LcfDataBas") {
@@ -170,7 +169,6 @@ void PrintReaderError(const std::string data)
 /// Takes data from in and writes converted data into out using libreaders
 int ReaderWriteToFile(const std::string& in, const std::string& out, FileTypes in_type)
 {
-	std::cout << out << std::endl;
 	switch (in_type)
 	{
 		case FileType_LCF_MapUnit:

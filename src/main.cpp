@@ -101,7 +101,7 @@ std::string GetFilename(const std::string& str)
 		return s;
 	}
 
-	s = s.substr(found);
+	s = s.substr(found + 1);
 	return s;
 }
 

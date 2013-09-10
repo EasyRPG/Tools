@@ -108,7 +108,7 @@ std::string GetFilename(const std::string& str)
 /// Uses heuristics to detect the file type
 FileTypes GetFiletype(const std::string& in_file, std::string& out_extension)
 {
-	std::ifstream in(in_file);
+	std::ifstream in(in_file.c_str());
 
 	char buf[128];
 	memset(buf, '\0', 128);

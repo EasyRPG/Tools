@@ -1,19 +1,19 @@
-/////////////////////////////////////////////////////////////////////////////
-// This file is part of EasyRPG.
-//
-// EasyRPG is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// EasyRPG is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with EasyRPG Player. If not, see <http://www.gnu.org/licenses/>.
-/////////////////////////////////////////////////////////////////////////////
+/*
+ * This file is part of EasyRPG.
+ *
+ * EasyRPG is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * EasyRPG is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with EasyRPG Player. If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <algorithm>
 #include <cstring>
@@ -80,7 +80,7 @@ int main(int argc, char** argv)
 }
 
 
-/// Returns the filename (without extension)
+/** Returns the filename (without extension). */
 std::string GetFilename(const std::string& str)
 {
 	std::string s = str;
@@ -105,10 +105,10 @@ std::string GetFilename(const std::string& str)
 	return s;
 }
 
-/// Uses heuristics to detect the file type
+/** Uses heuristics to detect the file type. */
 FileTypes GetFiletype(const std::string& in_file, std::string& out_extension)
 {
-	std::ifstream in(in_file);
+	std::ifstream in(in_file.c_str());
 
 	char buf[128];
 	memset(buf, '\0', 128);
@@ -154,7 +154,7 @@ FileTypes GetFiletype(const std::string& in_file, std::string& out_extension)
 	return FileType_Invalid;
 }
 
-/// Utility func for errors
+/** Utility func for errors. */
 void PrintReaderError(const std::string data)
 {
 	std::cerr << data << " error: " << LcfReader::GetError() << std::endl;
@@ -166,7 +166,7 @@ void PrintReaderError(const std::string data)
 		return 2;\
 	}
 
-/// Takes data from in and writes converted data into out using libreaders
+/** Takes data from in and writes converted data into out using libreaders. */
 int ReaderWriteToFile(const std::string& in, const std::string& out, FileTypes in_type)
 {
 	switch (in_type)

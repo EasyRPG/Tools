@@ -1,0 +1,61 @@
+LCF2XML
+=======
+
+LCF2XML is a small tool to convert RPG Maker 2000(3) data to XML and vice-versa.
+
+LCF2XML is part of the EasyRPG Project. More information is available
+at the project website:
+
+  https://easy-rpg.org/
+
+
+Documentation
+-------------
+
+Documentation is available at the documentation wiki:
+
+  https://easy-rpg.org/wiki/
+
+
+Requirements
+------------
+
+EasyRPG Readers library with XML enabled. https://github.com/EasyRPG/Readers
+Expat for XML support.
+
+
+Daily builds
+------------
+
+Up to date binaries for assorted platforms are available at:
+
+  https://easy-rpg.org/jenkins/
+
+
+Source code
+-----------
+
+LCF2XML development is hosted by GitHub.
+Project files are available in Git repositories.
+
+  https://github.com/EasyRPG/LCF2XML
+
+
+Building
+--------
+
+* GNU C++ compiler method:
+
+  Compile with:
+  g++ src/main.cpp -I /ABSOLUTE/PATH/TO/Readers/build/include -L /ABSOLUTE/PATH/TO/Readers/build/lib -lreaders -lexpat -o LCF2XMLEXECUTABLENAME
+
+
+* Visual Studio method:
+
+  Read the lib/README file then open the solution file in builds/ folder.
+
+
+License
+-------
+
+LCF2XML is free software. See the file COPYING for copying conditions.

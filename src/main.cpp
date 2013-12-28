@@ -25,6 +25,11 @@
 #include "lmt_reader.h"
 #include "lmu_reader.h"
 #include "lsd_reader.h"
+#include "reader_util.h"
+
+#ifndef _WIN32
+#include <dirent.h>
+#endif
 
 enum FileTypes
 {
@@ -105,6 +110,24 @@ std::string GetFilename(const std::string& str)
 	return s;
 }
 
+/** Returns that path (everything left to the last /) */
+std::string GetPath(const std::string& str) {
+	std::string s = str;
+#ifdef _WIN32
+	std::replace(s.begin(), s.end(), '\\', '/');
+#endif
+
+	// Path
+	size_t found = s.find_last_of("/");
+	if (found == std::string::npos)
+	{
+		return ".";
+	}
+
+	s = s.substr(0, found);
+	return s;
+}
+
 /** Uses heuristics to detect the file type. */
 FileTypes GetFiletype(const std::string& in_file, std::string& out_extension)
 {
@@ -169,31 +192,62 @@ void PrintReaderError(const std::string data)
 /** Takes data from in and writes converted data into out using libreaders. */
 int ReaderWriteToFile(const std::string& in, const std::string& out, FileTypes in_type)
 {
+	std::string path = GetPath(in) + "/";
+	std::string encoding = "";
+
+#ifdef _WIN32
+	encoding = ReaderUtil::GetEncoding(path + "RPG_RT.ini");
+#else
+	DIR* dir = opendir(path.c_str());
+	if (dir) {
+		struct dirent* ent;
+		while ((ent = ::readdir(dir)) != NULL) {
+			if (ent->d_name[0] == '.') { continue; }
+			std::string name = ent->d_name;
+
+			std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+
+			if (name == "rpg_rt.ini") {
+				encoding = ReaderUtil::GetEncoding(path + name);
+				closedir(dir);
+				goto dirsuccess;
+				break;
+			}
+		}
+		closedir(dir);
+	}
+	else {
+		std::cerr << "Failed opening directory " << path << std::endl;
+	}
+
+	dirsuccess:
+#endif
+
 	switch (in_type)
 	{
 		case FileType_LCF_MapUnit:
 		{
-			std::auto_ptr<RPG::Map> file = LMU_Reader::Load(in);
+			std::auto_ptr<RPG::Map> file = LMU_Reader::Load(in, encoding);
 			LCFXML_ERROR(file.get() == NULL, "LMU load");
 			LCFXML_ERROR(!LMU_Reader::SaveXml(out, *file), "LMU XML save");
 			break;
 		}
 		case FileType_LCF_SaveData:
 		{
-			std::auto_ptr<RPG::Save> file = LSD_Reader::Load(in);
+			std::auto_ptr<RPG::Save> file = LSD_Reader::Load(in, encoding);
 			LCFXML_ERROR(file.get() == NULL, "LSD load");
 			LCFXML_ERROR(!LSD_Reader::SaveXml(out, *file), "LSD XML save");
 			break;
 		}
 		case FileType_LCF_Database:
 		{
-			LCFXML_ERROR(!LDB_Reader::Load(in), "LDB load");
+			LCFXML_ERROR(!LDB_Reader::Load(in, encoding), "LDB load");
 			LCFXML_ERROR(!LDB_Reader::SaveXml(out), "LDB XML save");
 			break;
 		}
 		case FileType_LCF_MapTree:
 		{
-			LCFXML_ERROR(!LMT_Reader::Load(in), "LMT load");
+			LCFXML_ERROR(!LMT_Reader::Load(in, encoding), "LMT load");
 			LCFXML_ERROR(!LMT_Reader::SaveXml(out), "LMT XML save");
 			break;
 		}
@@ -201,26 +255,26 @@ int ReaderWriteToFile(const std::string& in, const std::string& out, FileTypes i
 		{
 			std::auto_ptr<RPG::Map> file = LMU_Reader::LoadXml(in);
 			LCFXML_ERROR(file.get() == NULL, "LMU XML load");
-			LCFXML_ERROR(!LMU_Reader::Save(out, *file), "LMU save");
+			LCFXML_ERROR(!LMU_Reader::Save(out, *file, encoding), "LMU save");
 			break;
 		}
 		case FileType_XML_SaveData:
 		{
 			std::auto_ptr<RPG::Save> file = LSD_Reader::LoadXml(in);
 			LCFXML_ERROR(file.get() == NULL, "LSD XML load");
-			LCFXML_ERROR(!LSD_Reader::Save(out, *file), "LSD save");
+			LCFXML_ERROR(!LSD_Reader::Save(out, *file, encoding), "LSD save");
 			break;
 		}
 		case FileType_XML_Database:
 		{
 			LCFXML_ERROR(!LDB_Reader::LoadXml(in), "LDB XML load");
-			LCFXML_ERROR(!LDB_Reader::Save(out), "LDB save");
+			LCFXML_ERROR(!LDB_Reader::Save(out, encoding), "LDB save");
 			break;
 		}
 		case FileType_XML_MapTree:
 		{
 			LCFXML_ERROR(!LMT_Reader::LoadXml(in), "LMT XML load");
-			LCFXML_ERROR(!LMT_Reader::Save(out), "LMT save");
+			LCFXML_ERROR(!LMT_Reader::Save(out, encoding), "LMT save");
 			break;
 		}
 		case FileType_Invalid:

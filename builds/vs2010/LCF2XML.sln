@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LCF2XML", "LCF2XML.vcxproj", "{6D0D8485-A1BC-4C30-8BEE-681342926AF1}"
 	ProjectSection(ProjectDependencies) = postProject
 		{D892967A-6B8E-4AC5-9D38-785D748796D0} = {D892967A-6B8E-4AC5-9D38-785D748796D0}
@@ -18,7 +20,7 @@ Global
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{6D0D8485-A1BC-4C30-8BEE-681342926AF1}.Debug|Win32.ActiveCfg = Debug|Win32
 		{6D0D8485-A1BC-4C30-8BEE-681342926AF1}.Debug|Win32.Build.0 = Debug|Win32
-		{6D0D8485-A1BC-4C30-8BEE-681342926AF1}.Debug|x64.ActiveCfg = Debug|Win32
+		{6D0D8485-A1BC-4C30-8BEE-681342926AF1}.Debug|x64.ActiveCfg = Debug|x64
 		{6D0D8485-A1BC-4C30-8BEE-681342926AF1}.Release|Win32.ActiveCfg = Release|Win32
 		{6D0D8485-A1BC-4C30-8BEE-681342926AF1}.Release|Win32.Build.0 = Release|Win32
 		{6D0D8485-A1BC-4C30-8BEE-681342926AF1}.Release|x64.ActiveCfg = Release|Win32

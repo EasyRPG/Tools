@@ -178,7 +178,7 @@ void PrintReaderError(const std::string data)
 		return 2;\
 	}
 
-/** Takes data from in and writes converted data into out using libreaders. */
+/** Takes data from in and writes converted data into out using liblcf. */
 int ReaderWriteToFile(const std::string& in, const std::string& out, FileTypes in_type)
 {
 	std::string path = GetPath(in) + "/";

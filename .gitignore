@@ -1,5 +1,5 @@
 /bin
-/lib/readers
+/lib/liblcf
 /builds/vs2010/Debug*
 /builds/vs2010/Release*
 /builds/vs2010/*.suo

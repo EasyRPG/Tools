@@ -20,7 +20,7 @@ Documentation is available at the documentation wiki:
 Requirements
 ------------
 
-EasyRPG Readers library with XML enabled. https://github.com/EasyRPG/Readers
+liblcf with XML support enabled. https://github.com/EasyRPG/liblcf
 Expat for XML support.
 
 
@@ -44,15 +44,15 @@ Project files are available in Git repositories.
 Building
 --------
 
-* GNU C++ compiler method:
+* GNU C++ compiler or Clang method:
 
   Compile with:
-  g++ src/main.cpp -I /ABSOLUTE/PATH/TO/Readers/build/include -L /ABSOLUTE/PATH/TO/Readers/build/lib -lreaders -lexpat -o LCF2XMLEXECUTABLENAME
+  cc src/main.cpp -llcf -lexpat -o lcf2xml
 
 
 * Visual Studio method:
 
-  Read the lib/README file then open the solution file in builds/ folder.
+  Read the lib/README file then open the .sln file in builds/ folder.
 
 
 License

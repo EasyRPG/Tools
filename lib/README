@@ -1,6 +1,6 @@
 LCF2XML
 =======
 
-Before compiling clone libreaders into a subfolder called
-readers here.
-The library can be found under https://github.com/EasyRPG/Readers
+Before compiling clone liblcf into a subfolder called liblcf here.
+
+The library can be found under https://github.com/EasyRPG/liblcf

@@ -1,7 +1,8 @@
 LCF2XML
 =======
 
-LCF2XML is a small tool to convert RPG Maker 2000(3) data to XML and vice-versa.
+LCF2XML is a small tool to convert RPG Maker 2000 and 2003 data to XML
+and vice-versa.
 
 LCF2XML is part of the EasyRPG Project. More information is available
 at the project website:
@@ -44,10 +45,10 @@ Project files are available in Git repositories.
 Building
 --------
 
-* GNU C++ compiler or Clang method:
+* GNU C++ compiler:
 
   Compile with:
-  cc src/main.cpp -llcf -lexpat -o lcf2xml
+  g++ src/main.cpp -llcf -lexpat -o lcf2xml
 
 
 * Visual Studio method:

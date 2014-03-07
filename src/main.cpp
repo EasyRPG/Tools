@@ -197,7 +197,7 @@ int ReaderWriteToFile(const std::string& in, const std::string& out, FileTypes i
 			std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 
 			if (name == "rpg_rt.ini") {
-				encoding = ReaderUtil::GetEncoding(path + name);
+				encoding = ReaderUtil::GetEncoding(path + ent->d_name);
 				closedir(dir);
 				goto dirsuccess;
 				break;

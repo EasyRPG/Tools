@@ -17,6 +17,8 @@ config.status
 configure
 depcomp
 install-sh
+lcf2xml
+lcf2xml.exe
 missing
 Makefile
 Makefile.in

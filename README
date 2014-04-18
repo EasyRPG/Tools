@@ -21,7 +21,7 @@ Documentation is available at the documentation wiki:
 Requirements
 ------------
 
-liblcf with XML support enabled. https://github.com/EasyRPG/liblcf
+liblcf https://github.com/EasyRPG/liblcf
 Expat for XML support.
 
 
@@ -49,6 +49,7 @@ Building
 
   If you have installed liblcf, you can use pkg-config to figure out
   the needed flags and paths. Compile with:
+
   g++ src/main.cpp `pkg-config --cflags --libs liblcf` -o lcf2xml
 
   Otherwise you need to download/git-clone and compile liblcf first

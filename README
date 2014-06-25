@@ -22,7 +22,6 @@ Requirements
 ------------
 
 liblcf https://github.com/EasyRPG/liblcf
-Expat for XML support.
 
 
 Daily builds
@@ -52,14 +51,6 @@ Building
 
   g++ src/main.cpp `pkg-config --cflags --libs liblcf` -o lcf2xml
 
-  Otherwise you need to download/git-clone and compile liblcf first
-  and have to make sure it can be found by the compiler, for example
-  by exporting a shell variable:
-  LLCF=/path/to/liblcf/src
-
-  Then you can compile with:
-  g++ -I$LLCF -I$LLCF/generated src/main.cpp -L$LLCF -llcf -lexpat \
-    -o lcf2xml
 
 * Visual Studio method:
 

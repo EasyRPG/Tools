@@ -30,7 +30,12 @@
         // Set base surface, used for generating the tileset
         BaseSurface     = Surface;
         ChipsetSurface  = SDL_CreateRGBSurface(0, 32 * 16, 45 * 16, 8, 0, 0, 0, 0);
+
+        // Copy pallete and Color Key
         SDL_SetSurfacePalette(ChipsetSurface, Surface->format->palette);
+        uint32_t ckey;
+        SDL_GetColorKey(Surface, &ckey);
+        SDL_SetColorKey(ChipsetSurface, SDL_TRUE, ckey);
 
         int CurrentTile = 0;
 
@@ -80,13 +85,8 @@
         if (Tile >= 0x2710)         // Upper layer tiles
         {
             Tile -= 0x2710;
-            // FIXME: This should be using ChipsetSurface, but for some reason it isn't blending
-            // well with the lower layer
-            // Tile += 0x04FB;
-            // DrawSurface(Destiny, x, y, ChipsetSurface, ((Tile&0x1F)<<4), ((Tile>>5)<<4), 16, 16);
-            int row = 18+Tile%6+(Tile/48)*6;
-            int col = (8+Tile/6)%16;
-            DrawSurface(Destiny, x, y, BaseSurface, row*16, col*16, 16, 16);
+            Tile += 0x04FB;
+            DrawSurface(Destiny, x, y, ChipsetSurface, ((Tile&0x1F)<<4), ((Tile>>5)<<4), 16, 16);
         } else if (Tile >= 0x1388)  // Lower layer tiles
         {
             Tile -= 0x1388;

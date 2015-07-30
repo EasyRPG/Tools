@@ -17,9 +17,6 @@
 // *****************************************************************************
 // =============================================================================
     #include <iostream>
-    #include <fstream>
-    #include <cstdio>
-    #include <iostream>
     #include "SDL_image.h"
     #include "reader_lcf.h"
     #include "lmu_reader.h"
@@ -35,13 +32,13 @@
 
         if(argc < 4 || argc > 5)
         {
-		    std::cout<<usage;
+            std::cout<<usage;
             exit(EXIT_FAILURE);
         }
 
         const char* map_path = argv[1];
-	    const char* chipset_path = argv[2];
-	    const char* output_path = argv[3];
+        const char* chipset_path = argv[2];
+        const char* output_path = argv[3];
 
         std::auto_ptr<RPG::Map> map = LMU_Reader::Load(map_path, "");
         if (map.get() == NULL)
@@ -76,10 +73,18 @@
                 gen.RenderTile(output, x*16, y*16, map->upper_layer[x+y*map->width], 0);
             }
 
+        std::vector<RPG::Event>::iterator ev;
+        for (ev = map->events.begin(); ev != map->events.end(); ++ev)
+        {
+            RPG::EventPage evp = ev->pages[0];
+            if (evp.character_name.empty())
+                gen.RenderTile(output, (ev->x)*16, (ev->y)*16, 0x2710 + evp.character_index, 0);
+        }
+
         if(IMG_SavePNG(output, output_path) < 0)
         {
-		    std::cerr<<IMG_GetError()<<std::endl;
-		    exit(EXIT_FAILURE);
+	    std::cerr<<IMG_GetError()<<std::endl;
+	    exit(EXIT_FAILURE);
         }
 
         exit(EXIT_SUCCESS);

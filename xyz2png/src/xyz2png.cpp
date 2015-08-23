@@ -21,6 +21,9 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#ifdef _WIN32
+# include <algorithm>
+#endif
 
 # ifdef __MINGW64_VERSION_MAJOR
 int _dowildcard = -1; /* enable wildcard expansion for mingw-w64 */

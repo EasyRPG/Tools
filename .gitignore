@@ -23,5 +23,7 @@ lmu2png/lmu2png
 lmu2png/lmu2png.exe
 xyz2png/xyz2png
 xyz2png/xyz2png.exe
+png2xyz/png2xyz
+png2xyz/png2xyz.exe
 missing
 Makefile.in

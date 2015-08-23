@@ -1,10 +1,10 @@
-XYZ2PNG
+PNG2XYZ
 =======
 
-XYZ2PNG is a small tool to convert RPG Maker 2000 and 2003 XYZ image
+PNG2XYZ is a small tool to convert RPG Maker 2000 and 2003 XYZ image
 file format into PNG images.
 
-XYZ2PNG is part of the EasyRPG Project. More information is available
+PNG2XYZ is part of the EasyRPG Project. More information is available
 at the project website:
 
   https://easy-rpg.org/
@@ -28,7 +28,7 @@ zlib
 Source code
 -----------
 
-XYZ2PNG development is hosted by GitHub.
+PNG2XYZ development is hosted by GitHub.
 Project files are available in Git repositories.
 
   https://github.com/EasyRPG/Tools
@@ -46,4 +46,4 @@ Run:
 License
 -------
 
-XYZ2PNG is free software. See the file COPYING for copying conditions.
+PNG2XYZ is free software. See the file COPYING for copying conditions.

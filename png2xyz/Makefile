@@ -1,7 +1,7 @@
 SHELL = /bin/sh
-TARGET = xyz2png
+TARGET = png2xyz
 CC = g++
-SRCS =  src/xyz2png.cpp
+SRCS =  src/png2xyz.cpp
 CFLAGS = -O2 -s -Wall -Wextra -ansi -pedantic $(shell pkg-config --cflags libpng zlib)
 CXXFLAGS = $(CFLAGS) -fno-exceptions -fno-rtti
 

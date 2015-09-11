@@ -21,6 +21,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <sstream>
 #ifdef _WIN32
 # include <algorithm>
 #endif
@@ -134,8 +135,10 @@ int main(int argc, char* argv[]) {
 		png_structp png_ptr;
 		png_infop info_ptr;
 		std::string png_filename;
+		std::stringstream ss;
 
-		png_filename = GetFilename(argv[arg]) + ".png";
+		ss << GetFilename(argv[arg]) << ".png";
+		png_filename = ss.str();
 
 		// Open file for writing
 		png_file = fopen(png_filename.c_str(), "wb");

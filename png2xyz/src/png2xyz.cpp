@@ -21,6 +21,7 @@
 #include <cstring>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #ifdef _WIN32
 # include <algorithm>
 #endif
@@ -248,7 +249,9 @@ int main(int argc, char* argv[]) {
 			return 1;
 		}
 
-		xyz_filename = GetFilename(argv[arg]) + ".xyz";
+		std::stringstream ss;
+		ss << GetFilename(argv[arg]) + std::string(".xyz");
+		xyz_filename = ss.str();
 		std::ofstream xyz_file(xyz_filename.c_str(), std::ofstream::binary);
 		xyz_file.write("XYZ1", 4);
 		xyz_file.write(reinterpret_cast<char*>(&width), 2);

@@ -10,18 +10,13 @@ the Windows Explorer.
 
 ## Installation
 
-Enter folder `bin\Release\x86` (32bit) or `bin\Release\amd64` (64bit)
-and open a elevated command prompt (admin).
+Run `install.cmd` in the `bin` directory.
 
-    $ regsvr32 EasyRpgXyzShellExtThumbnailHandler.dll
-	
-Important: Don't delete the file, this will break the shell handler!
-	
+Important: Don't delete the bin folder, this will break the shell handler!
+
 ## Uninstallation
 
-Same steps as above.
-
-    $ regsvr32 /u EasyRpgXyzShellExtThumbnailHandler.dll
+Run `uninstall.cmd` in the `bin` directory.
 
 ## Usage
 

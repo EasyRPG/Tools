@@ -4,6 +4,9 @@
 Generates thumbnails from RPG Maker 2000/2003 XYZ graphics format for view in
 the Windows Explorer.
 
+Windows XP is not supported, consider disconnecting such PCs from the
+internet.
+
 ## Screenshot
 
 ![screenshot](assets/screenshot.png)

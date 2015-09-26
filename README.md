@@ -50,9 +50,14 @@ Tool to convert XYZ images into PNG images. It supports wildcards.
 ### xyz-thumbnailer
 
 Tool to display thumbnails for XYZ files in your file manager (currently
-Linux/GTK3 only)
+Windows and Linux/GTK3 only)
 
-#### Syntax:
+#### Windows:
+
+Shell extension for Windows explorer, see included README.md for install
+instructions.
+
+#### Syntax (Linux):
 
     xyz-thumbnailer input output [size]
 

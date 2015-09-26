@@ -1,0 +1,4 @@
+[Thumbnailer Entry]
+TryExec=xyz-thumbnailer
+Exec=xyz-thumbnailer %i %o %s
+MimeType=image/xyz;

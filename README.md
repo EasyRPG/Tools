@@ -47,6 +47,15 @@ Tool to convert XYZ images into PNG images. It supports wildcards.
 
     xyz2png filenames
 
+### xyz-thumbnailer
+
+Tool to display thumbnails for XYZ files in your file manager (currently
+Linux/GTK3 only)
+
+#### Syntax:
+
+    xyz-thumbnailer input output [size]
+
 
 Source code
 -----------

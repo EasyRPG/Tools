@@ -21,6 +21,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
+	  <AdditionalDependencies>setargv.obj;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup />

@@ -15,7 +15,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "png2xyz", "png2xyz\png2xyz.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xyz2png", "xyz2png\xyz2png.vcxproj", "{E13FFEDB-A413-4A8A-BF34-67B77A0178C4}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "liblcf", "lib\liblcf\builds\vs2010\liblcf.vcxproj", "{D892967A-6B8E-4AC5-9D38-785D748796D0}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "liblcf", "lib\liblcf\builds\vs2015\liblcf.vcxproj", "{D892967A-6B8E-4AC5-9D38-785D748796D0}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xyz-thumbnailer", "xyz-thumbnailer\windows\xyz-thumbnailer.vcxproj", "{145AB33E-71A1-42C3-8223-E107CFC162F4}"
 EndProject

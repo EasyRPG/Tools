@@ -11,7 +11,7 @@
     <OutDir>bin\</OutDir>
     <IntDir>$(Configuration)\$(PlatformShortName)\</IntDir>
     <TargetName>$(ProjectName)$(PlatformSuffix)$(DebugSuffix)</TargetName>
-	<PlatformToolset>v100</PlatformToolset>
+	<PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>

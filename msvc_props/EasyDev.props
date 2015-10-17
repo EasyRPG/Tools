@@ -8,7 +8,7 @@
       <AdditionalIncludeDirectories>$(EASYDEV_MSVC)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(EASYDEV_MSVC)\lib\$(PlatformToolset)\$(PlatformShortName)\$(ConfigurationName)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(EASYDEV_MSVC)\lib\$(PlatformShortName)\$(ConfigurationName)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup />

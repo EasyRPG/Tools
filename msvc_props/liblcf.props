@@ -8,8 +8,8 @@
   <PropertyGroup />
   <ItemDefinitionGroup>
     <Link>
-      <AdditionalDependencies>liblcf$(PlatformSuffix).lib;libexpat.lib;sicudt$(DebugSuffix).lib;sicuuc$(DebugSuffix).lib;sicuin$(DebugSuffix).lib;kernel32.lib;user32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\lib\liblcf\lib\$(ConfigurationName);$(EASYDEV_MSVC)\lib\$(PlatformToolset)\$(PlatformShortName)\$(ConfigurationName)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>liblcf.lib;libexpat.lib;sicudt$(DebugSuffix).lib;sicuuc$(DebugSuffix).lib;sicuin$(DebugSuffix).lib;kernel32.lib;user32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(EASYDEV_MSVC)\lib\$(PlatformShortName)\$(ConfigurationName)</AdditionalLibraryDirectories>
     </Link>
     <ProjectReference />
     <ClCompile>

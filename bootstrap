@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# meta
+aclocal && automake --foreign --add-missing && autoconf
+
+# subprojects
+for project in lcf2xml lmu2png png2xyz xyz2png
+do
+	echo "=== bootstrapping in $project"
+	`cd $project && ./bootstrap`
+done

@@ -9,3 +9,5 @@ lmu2png_CXXFLAGS = \
 lmu2png_LDADD = \
 	$(LCF_LIBS) \
 	$(SDL2_IMAGE_LIBS)
+
+EXTRA_DIST = README.md

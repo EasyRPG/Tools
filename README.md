@@ -1,13 +1,13 @@
 EasyRPG Tools
 =============
 
-EasyRPG Tools is a suite of small file related applications to convert
-RPG Maker 2000/2003 files.
+EasyRPG Tools is a suite of small file related applications to use and
+convert RPG Maker 2000/2003 files.
 
-EasyRPG Tools is part of the EasyRPG Project. More information is
-available at the project website:
+EasyRPG Tools is part of the EasyRPG Project.
+More information is available at the project website:
 
-  https://easy-rpg.org/
+https://easy-rpg.org/
 
 
 Tool details
@@ -15,64 +15,60 @@ Tool details
 
 These are the currently available tools:
 
-### LCF2XML
+ * LCF2XML: converts LMU, LMT, LDB and LSD files into XML and vice-versa.
 
-Tool to convert LMU, LMT, LDB and LSD files into XML and vice-versa.
-
-#### Syntax: 
+Syntax:
 
     lcf2xml inputfile outputfile
 
-### LMU2PNG
+ * LMU2PNG: renders LMU maps to PNG images with events as tiles support.
 
-Tool to render LMU maps to PNG images with events as tiles support.
-
-#### Syntax:
+Syntax:
 
     lmu2png mapfile chipsetfile outputfile
 
-### PNG2XYZ
+ * PNG2XYZ: converts PNG images into XYZ images. It supports wildcards.
 
-Tool to convert PNG images into XYZ images. It supports wildcards.
+Syntax:
 
-#### Syntax:
+    png2xyz file1 [... fileN]
 
-    png2xyz filenames
+ * XYZ2PNG: converts XYZ images into PNG images. It supports wildcards.
 
-### XYZ2PNG
+Syntax:
 
-Tool to convert XYZ images into PNG images. It supports wildcards.
+    xyz2png file1 [... fileN]
 
-#### Syntax:
+ * xyz-thumbnailer: displays thumbnails for XYZ files in your file manager
+                    (currently Windows and Linux/GTK3 only)
 
-    xyz2png filenames
+Windows: Shell extension for Windows explorer, see included README.md for
+         install instructions.
 
-### xyz-thumbnailer
-
-Tool to display thumbnails for XYZ files in your file manager (currently
-Windows and Linux/GTK3 only)
-
-#### Windows:
-
-Shell extension for Windows explorer, see included README.md for install
-instructions.
-
-#### Syntax (Linux):
+Syntax (Linux):
 
     xyz-thumbnailer input output [size]
+
+
+Daily builds
+------------
+
+Up to date binaries are available at:
+
+https://easy-rpg.org/jenkins/
 
 
 Source code
 -----------
 
-EasyRPG Tools development is hosted by GitHub.
-Project files are available in Git repositories.
+EasyRPG Tools development is hosted by GitHub, project files are available in
+Git repositories.
 
-  https://github.com/EasyRPG/Tools
+https://github.com/EasyRPG/Tools
 
 
 License
 -------
 
-EasyRPG Tools are free software. Read the LICENSE file available in
-every tool directory for copying details.
+The EasyRPG Tools are free software under different licenses. Read the LICENSE
+file available in the respective tool directories for details.

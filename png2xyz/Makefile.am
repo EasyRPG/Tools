@@ -6,3 +6,5 @@ png2xyz_CXXFLAGS = \
 png2xyz_LDADD = \
 	$(PNG_LIBS) \
 	$(ZLIB_LIBS)
+
+EXTRA_DIST = README.md

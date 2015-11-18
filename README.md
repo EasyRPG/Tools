@@ -17,37 +17,27 @@ These are the currently available tools:
 
  * LCF2XML: converts LMU, LMT, LDB and LSD files into XML and vice-versa.
 
-Syntax:
-
-    lcf2xml inputfile outputfile
+   Syntax: `lcf2xml inputfile outputfile`
 
  * LMU2PNG: renders LMU maps to PNG images with events as tiles support.
 
-Syntax:
-
-    lmu2png mapfile chipsetfile outputfile
+   Syntax: `lmu2png mapfile chipsetfile outputfile`
 
  * PNG2XYZ: converts PNG images into XYZ images. It supports wildcards.
 
-Syntax:
-
-    png2xyz file1 [... fileN]
+   Syntax: `png2xyz file1 [... fileN]`
 
  * XYZ2PNG: converts XYZ images into PNG images. It supports wildcards.
 
-Syntax:
-
-    xyz2png file1 [... fileN]
+   Syntax: `xyz2png file1 [... fileN]`
 
  * xyz-thumbnailer: displays thumbnails for XYZ files in your file manager
                     (currently Windows and Linux/GTK3 only)
 
-Windows: Shell extension for Windows explorer, see included README.md for
-         install instructions.
+   Windows: Shell extension for Windows explorer, see included README.md for
+            install instructions.
 
-Syntax (Linux):
-
-    xyz-thumbnailer input output [size]
+   Syntax (Linux): `xyz-thumbnailer input output [size]`
 
 
 Daily builds

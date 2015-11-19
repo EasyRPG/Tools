@@ -1,0 +1,19 @@
+SUBDIRS = 
+
+if ENABLE_LCF2XML
+SUBDIRS += lcf2xml
+endif
+
+if ENABLE_LMU2PNG
+SUBDIRS += lmu2png
+endif
+
+if ENABLE_PNG2XYZ
+SUBDIRS += png2xyz
+endif
+
+if ENABLE_XYZ2PNG
+SUBDIRS += xyz2png
+endif
+
+EXTRA_DIST = README.md

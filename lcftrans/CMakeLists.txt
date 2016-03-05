@@ -8,10 +8,14 @@ include(ConfigureWindows)
 find_package(liblcf REQUIRED)
 
 add_executable(lcftrans
+	src/dirent_win.h
+	src/entry.cpp
+	src/entry.h
 	src/main.cpp
 	src/translation.cpp
 	src/translation.h
-	src/dirent_win.h
+	src/utils.cpp
+	src/utils.h
 )
 
 target_link_libraries(lcftrans liblcf::liblcf)

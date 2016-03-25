@@ -21,6 +21,7 @@ EASYRPG_TOOL_ENABLE([lmu2png])
 EASYRPG_TOOL_ENABLE([png2xyz])
 EASYRPG_TOOL_ENABLE([xyz2png])
 EASYRPG_TOOL_ENABLE([xyzcrush])
+EASYRPG_TOOL_ENABLE([gencache])
 
 AC_CONFIG_FILES([Makefile])
 
@@ -33,10 +34,11 @@ echo ""
 echo "  prefix:  $prefix"
 echo ""
 echo "Converters:"
-echo "  lcf2xml: $enable_lcf2xml"
-echo "  lmu2png: $enable_lmu2png"
-echo "  png2xyz: $enable_png2xyz"
-echo "  xyz2png: $enable_xyz2png"
+echo "  lcf2xml:  $enable_lcf2xml"
+echo "  lmu2png:  $enable_lmu2png"
+echo "  png2xyz:  $enable_png2xyz"
+echo "  xyz2png:  $enable_xyz2png"
 echo ""
 echo "Other:"
 echo "  xyzcrush: $enable_xyzcrush"
+echo "  gencache: $enable_gencache"

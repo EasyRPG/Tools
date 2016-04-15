@@ -216,14 +216,14 @@ int ReaderWriteToFile(const std::string& in, const std::string& out, FileTypes i
 	{
 		case FileType_LCF_MapUnit:
 		{
-			std::auto_ptr<RPG::Map> file = LMU_Reader::Load(in, encoding);
+			std::unique_ptr<RPG::Map> file = LMU_Reader::Load(in, encoding);
 			LCFXML_ERROR(file.get() == NULL, "LMU load");
 			LCFXML_ERROR(!LMU_Reader::SaveXml(out, *file), "LMU XML save");
 			break;
 		}
 		case FileType_LCF_SaveData:
 		{
-			std::auto_ptr<RPG::Save> file = LSD_Reader::Load(in, encoding);
+			std::unique_ptr<RPG::Save> file = LSD_Reader::Load(in, encoding);
 			LCFXML_ERROR(file.get() == NULL, "LSD load");
 			LCFXML_ERROR(!LSD_Reader::SaveXml(out, *file), "LSD XML save");
 			break;
@@ -242,14 +242,14 @@ int ReaderWriteToFile(const std::string& in, const std::string& out, FileTypes i
 		}
 		case FileType_XML_MapUnit:
 		{
-			std::auto_ptr<RPG::Map> file = LMU_Reader::LoadXml(in);
+			std::unique_ptr<RPG::Map> file = LMU_Reader::LoadXml(in);
 			LCFXML_ERROR(file.get() == NULL, "LMU XML load");
 			LCFXML_ERROR(!LMU_Reader::Save(out, *file, encoding), "LMU save");
 			break;
 		}
 		case FileType_XML_SaveData:
 		{
-			std::auto_ptr<RPG::Save> file = LSD_Reader::LoadXml(in);
+			std::unique_ptr<RPG::Save> file = LSD_Reader::LoadXml(in);
 			LCFXML_ERROR(file.get() == NULL, "LSD XML load");
 			LCFXML_ERROR(!LSD_Reader::Save(out, *file, encoding), "LSD save");
 			break;

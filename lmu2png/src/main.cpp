@@ -41,7 +41,7 @@
         const char* chipset_path = argv[2];
         const char* output_path = argv[3];
 
-        std::auto_ptr<RPG::Map> map = LMU_Reader::Load(map_path, "");
+        std::unique_ptr<RPG::Map> map = LMU_Reader::Load(map_path, "");
         if (map.get() == NULL)
         {
             std::cerr<<LcfReader::GetError()<<std::endl;

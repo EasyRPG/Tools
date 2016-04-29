@@ -15,6 +15,9 @@
 
 #include "json.hpp"
 
+/* legacy mode, linear list */
+#define LEGACY 1
+
 using json = nlohmann::json;
 
 json parse_dir_recursive(const std::string& path, const int depth) {
@@ -37,8 +40,17 @@ json parse_dir_recursive(const std::string& path, const int depth) {
 			/* dig deeper, but skip upper and current directory */
 			if(dent->d_type == DT_DIR && dirname != ".." && dirname != ".") {
 				json temp = parse_dir_recursive(path + "/" + dirname, depth - 1);
-				if (!temp.empty())
+				if (!temp.empty()) {
+#if LEGACY
+					for (json::iterator it = temp.begin(); it != temp.end(); ++it) {
+						std::string val = it.value();
+						std::string key = it.key();
+						r[lower_dirname + "/" + key.substr(0, key.find_last_of("."))] = dirname + "/" + val;
+					}
+#else
 					r[lower_dirname] = temp;
+#endif
+				}
 			}
 
 			/* add files */

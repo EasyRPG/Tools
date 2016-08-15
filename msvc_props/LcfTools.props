@@ -4,8 +4,8 @@
   <PropertyGroup Label="UserMacros">
 	<DebugSuffix Condition="'$(Configuration)'=='Debug'">d</DebugSuffix>
 	<PlatformSuffix Condition="'$(Platform)' == 'x64'">64</PlatformSuffix>
-	<MyRuntimeLibrary Condition="'$(Configuration)'=='Debug'">MultiThreadedDebug</MyRuntimeLibrary>
-	<MyRuntimeLibrary Condition="'$(Configuration)'=='Release'">MultiThreaded</MyRuntimeLibrary>
+	<MyRuntimeLibrary Condition="'$(Configuration)'=='Debug'">MultiThreadedDebugDLL</MyRuntimeLibrary>
+	<MyRuntimeLibrary Condition="'$(Configuration)'=='Release'">MultiThreadedDLL</MyRuntimeLibrary>
   </PropertyGroup>
   <PropertyGroup>
     <OutDir>bin\</OutDir>

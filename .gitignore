@@ -6,6 +6,8 @@ Release*
 *.suo
 *.user
 *.*sdf
+*.VC.db
+*.VC.opendb
 ipch/
 CMakeCache.txt
 CMakeFiles/

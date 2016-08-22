@@ -5,8 +5,21 @@
  */
 
 #include <unicode/unistr.h>
-#include <unicode/ustream.h>
-#include <dirent.h>
+#ifdef _WIN32
+#  define VC_EXTRALEAN
+#  define WIN32_LEAN_AND_MEAN
+#  ifndef NOMINMAX
+#    define NOMINMAX
+#  endif
+#  include <Windows.h>
+#  include "dirent_win.h"
+   /* symlinks are not supported under windows currently */
+#  ifndef DT_LNK
+#    define DT_LNK DT_REG
+#  endif
+#else
+#  include <dirent.h>
+#endif
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -25,6 +38,12 @@ json parse_dir_recursive(const std::string& path, const int depth) {
 	struct dirent *dent;
 	json r;
 
+#ifdef _WIN32
+	// Will only work when the game has files in the current codepage
+	// but should be good enough for the typical use case
+	const char* codepage = std::string("cp" + std::to_string(GetACP())).c_str();
+#endif
+
 	/* do not recurse any further */
 	if(depth == 0)
 		return r;
@@ -32,10 +51,17 @@ json parse_dir_recursive(const std::string& path, const int depth) {
 	dir = opendir(path.c_str());
 	if(dir != nullptr) {
 		while((dent = readdir(dir)) != nullptr) {
-			std::string dirname = std::string(dent->d_name);
+			std::string dirname;
 			/* unicode aware lowercase conversion */
 			std::string lower_dirname;
+
+#ifdef _WIN32
+			icu::UnicodeString(dent->d_name, codepage).toLower().toUTF8String(lower_dirname);
+			icu::UnicodeString(dent->d_name, codepage).toUTF8String(dirname);
+#else
+			dirname = std::string(dent->d_name);
 			icu::UnicodeString(dent->d_name).toLower().toUTF8String(lower_dirname);
+#endif
 
 			/* dig deeper, but skip upper and current directory */
 			if(dent->d_type == DT_DIR && dirname != ".." && dirname != ".") {

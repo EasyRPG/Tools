@@ -17,8 +17,10 @@ CMakeFiles/
 autom4te.cache/
 .dirstamp
 *.o
+*~
 Makefile.in
 aclocal.m4
+compile
 config.h
 config.h.in
 config.log
@@ -39,3 +41,5 @@ xyz2png/xyz2png
 xyz2png/Makefile
 png2xyz/png2xyz
 png2xyz/Makefile
+xyzcrush/xyzcrush
+xyzcrush/Makefile

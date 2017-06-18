@@ -17,6 +17,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "png2xyz", "png2xyz\png2xyz.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xyz2png", "xyz2png\xyz2png.vcxproj", "{E13FFEDB-A413-4A8A-BF34-67B77A0178C4}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xyzcrush", "xyzcrush\xyzcrush.vcxproj", "{3AD23180-E67B-4109-982E-D1A6A6F1DDDB}"
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "liblcf", "lib\liblcf\builds\vs2015\liblcf.vcxproj", "{D892967A-6B8E-4AC5-9D38-785D748796D0}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xyz-thumbnailer", "xyz-thumbnailer\windows\xyz-thumbnailer.vcxproj", "{145AB33E-71A1-42C3-8223-E107CFC162F4}"
@@ -77,6 +79,14 @@ Global
 		{145AB33E-71A1-42C3-8223-E107CFC162F4}.Release|x64.Build.0 = Release|x64
 		{145AB33E-71A1-42C3-8223-E107CFC162F4}.Release|x86.ActiveCfg = Release|Win32
 		{145AB33E-71A1-42C3-8223-E107CFC162F4}.Release|x86.Build.0 = Release|Win32
+		{3AD23180-E67B-4109-982E-D1A6A6F1DDDB}.Debug|x64.ActiveCfg = Debug|x64
+		{3AD23180-E67B-4109-982E-D1A6A6F1DDDB}.Debug|x64.Build.0 = Debug|x64
+		{3AD23180-E67B-4109-982E-D1A6A6F1DDDB}.Debug|x86.ActiveCfg = Debug|Win32
+		{3AD23180-E67B-4109-982E-D1A6A6F1DDDB}.Debug|x86.Build.0 = Debug|Win32
+		{3AD23180-E67B-4109-982E-D1A6A6F1DDDB}.Release|x64.ActiveCfg = Release|x64
+		{3AD23180-E67B-4109-982E-D1A6A6F1DDDB}.Release|x64.Build.0 = Release|x64
+		{3AD23180-E67B-4109-982E-D1A6A6F1DDDB}.Release|x86.ActiveCfg = Release|Win32
+		{3AD23180-E67B-4109-982E-D1A6A6F1DDDB}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

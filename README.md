@@ -31,6 +31,10 @@ These are the currently available tools:
 
    Syntax: `xyz2png file1 [... fileN]`
 
+ * XYZCrush: makes smaller XYZ images. It supports wildcards.
+
+   Syntax: `xyzcrush file1 [... fileN]`
+
  * xyz-thumbnailer: displays thumbnails for XYZ files in your file manager
                     (currently Windows and Linux/GTK3 only)
 

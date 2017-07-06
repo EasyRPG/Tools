@@ -89,28 +89,31 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
+	unsigned int errors;
+	char header[5];
+
 	for (int arg = 1; arg < argc; arg++) {
 		std::ifstream file(argv[arg],
 			std::ios::binary | std::ios::ate);
 		if (!file) {
 			std::cerr << "Error reading file " << argv[arg] << "."
 				<< std::endl;
-			return 1;
+			errors++;
+			continue;
 		}
 
 		long size = file.tellg();
-		char* header = new char[4];
+		header[4] = '\0';
 
 		file.seekg(0, std::ios::beg);
-		file.read((char*) header, 4);
+		file.read(header, 4);
+
 		if (memcmp(header, "XYZ1", 4) != 0) {
 			std::cerr << "Input file " << argv[arg]
-				<< " is not a XYZ file: '" << header << "'."
-				<< std::endl;
-			delete[] header;
-			return 1;
+				<< " is not an XYZ file: '" << header << "'." << std::endl;
+			errors++;
+			continue;
 		}
-		delete[] header;
 
 		unsigned short width;
 		unsigned short height;
@@ -125,13 +128,13 @@ int main(int argc, char* argv[]) {
 		uLongf xyz_size = 768 + (width * height);
 		Bytef* xyz_data = new Bytef[xyz_size];
 
-		int status = uncompress(xyz_data, &xyz_size,
-			compressed_xyz_data, compressed_xyz_size);
+		int status = uncompress(xyz_data, &xyz_size, compressed_xyz_data,
+			compressed_xyz_size);
 
 		if (status != Z_OK) {
-			std::cerr << "XYZ error in file " << argv[arg] << "."
-				<< std::endl;
-			return 1;
+			std::cerr << "XYZ error in file " << argv[arg] << "." << std::endl;
+			errors++;
+			continue;
 		}
 		delete[] compressed_xyz_data;
 
@@ -139,23 +142,29 @@ int main(int argc, char* argv[]) {
 		size_t comp_size = 0;
 		unsigned char* comp_data = 0;
 
-		ZopfliZlibCompress(&zopfli_options, xyz_data, xyz_size,
-			&comp_data, &comp_size);
+		ZopfliZlibCompress(&zopfli_options, xyz_data, xyz_size, &comp_data,
+			&comp_size);
 
 		delete[] xyz_data;
 
 		std::stringstream ss;
 		ss << GetFilename(argv[arg]) + std::string(".xyz");
 		std::string xyz_filename = ss.str();
-		std::ofstream xyz_file(xyz_filename.c_str(),
-			std::ofstream::binary);
+		std::ofstream xyz_file(xyz_filename.c_str(), std::ofstream::binary);
 		xyz_file.write("XYZ1", 4);
 		xyz_file.write(reinterpret_cast<char*>(&width), 2);
 		xyz_file.write(reinterpret_cast<char*>(&height), 2);
 		xyz_file.write(reinterpret_cast<char*>(comp_data), comp_size);
 		xyz_file.close();
 		delete[] comp_data;
+
+		std::cout << "Input file " << argv[arg] << ": " << size << "->"
+			<< comp_size + 8 << " (" << (comp_size + 8) * 100 / size << "%)"
+			<< std::endl;
 	}
 
+	if (errors > 0) {
+		return 1;
+	}
 	return 0;
 }

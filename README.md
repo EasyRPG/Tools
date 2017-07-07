@@ -7,7 +7,7 @@ convert RPG Maker 2000/2003 files.
 EasyRPG Tools is part of the EasyRPG Project.
 More information is available at the project website:
 
-https://easy-rpg.org/
+https://easyrpg.org/
 
 
 Tool details
@@ -49,7 +49,7 @@ Daily builds
 
 Up to date binaries are available at:
 
-https://easy-rpg.org/jenkins/
+https://ci.easyrpg.org/
 
 
 Source code

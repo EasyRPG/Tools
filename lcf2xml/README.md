@@ -7,7 +7,7 @@ LCF2XML is a small tool to convert RPG Maker 2000 and 2003 data format
 LCF2XML is part of the EasyRPG Project.
 More information is available at the project website:
 
-https://easy-rpg.org/
+https://easyrpg.org/
 
 
 Documentation
@@ -15,7 +15,7 @@ Documentation
 
 Documentation is available at the documentation wiki:
 
-https://easy-rpg.org/wiki/
+https://wiki.easyrpg.org/
 
 
 Requirements
@@ -29,7 +29,7 @@ Daily builds
 
 Up to date binaries for assorted platforms are available at:
 
-https://easy-rpg.org/jenkins/
+https://ci.easyrpg.org/
 
 
 Source code

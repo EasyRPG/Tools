@@ -1,4 +1,4 @@
-AC_INIT([lcf2xml],[1.0],[https://github.com/EasyRPG/Tools/issues],[lcf2xml],[https://easy-rpg.org/])
+AC_INIT([lcf2xml],[1.0],[https://github.com/EasyRPG/Tools/issues],[lcf2xml],[https://easyrpg.org/])
 
 AC_CONFIG_AUX_DIR([.])
 AM_INIT_AUTOMAKE([foreign subdir-objects -Wall])

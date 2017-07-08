@@ -20,4 +20,8 @@ if ENABLE_XYZCRUSH
 SUBDIRS += xyzcrush
 endif
 
+if ENABLE_GENCACHE
+SUBDIRS += gencache
+endif
+
 EXTRA_DIST = README.md

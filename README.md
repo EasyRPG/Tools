@@ -40,12 +40,12 @@ These are the currently available tools:
    Syntax: `gencache [Options] [Directory]`
 
  * xyz-thumbnailer: displays thumbnails for XYZ files in your file manager
-                    (currently Windows and Linux/GTK3 only)
+                    (currently Windows and Linux/GTK3/KDE5 only)
 
    Windows: Shell extension for Windows explorer, see included README.md for
             install instructions.
 
-   Syntax (Linux): `xyz-thumbnailer input output [size]`
+   Syntax (Linux/GTK3): `xyz-thumbnailer input output [size]`
 
 
 Daily builds

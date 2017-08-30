@@ -89,7 +89,7 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
-	unsigned int errors;
+	unsigned int errors = 0;
 	char header[5];
 
 	for (int arg = 1; arg < argc; arg++) {

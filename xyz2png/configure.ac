@@ -1,4 +1,4 @@
-AC_INIT([xyz2png],[1.0],[https://github.com/EasyRPG/Tools/issues],[xyz2png],[https://easy-rpg.org/])
+AC_INIT([xyz2png],[1.0],[https://github.com/EasyRPG/Tools/issues],[xyz2png],[https://easyrpg.org/])
 
 AC_CONFIG_AUX_DIR([.])
 AM_INIT_AUTOMAKE([foreign subdir-objects -Wall])

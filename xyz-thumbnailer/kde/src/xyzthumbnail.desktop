@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Service
+Name=RPG Maker 2k/2k3 XYZ Images
+MimeType=image/xyz;
+CacheThumbnail=true
+X-KDE-ServiceTypes=ThumbCreator
+X-KDE-Library=xyzthumbnail

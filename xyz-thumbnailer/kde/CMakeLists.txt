@@ -1,6 +1,8 @@
 project(kde-thumbnailer-xyzimage)
 cmake_minimum_required(VERSION 3.1)
 
+set(CMAKE_CXX_STANDARD 11)
+
 find_package(ECM 1.0.0 REQUIRED NO_MODULE)
 
 find_package(ZLIB REQUIRED)
@@ -14,11 +16,16 @@ include(KDECompilerSettings)
 
 find_package(KF5 REQUIRED COMPONENTS KIO)
 
-set(xyzthumbnail_SRCS src/xyzthumbnail.cpp)
+set(xyz_SRCS src/xyz.cpp)
 
-add_library(xyzthumbnail MODULE ${xyzthumbnail_SRCS})
-
+# Thumbnail plugin
+add_library(xyzthumbnail MODULE ${xyz_SRCS})
 target_link_libraries(xyzthumbnail KF5::KIOWidgets ${ZLIB_LIBRARIES})
+install(TARGETS xyzthumbnail DESTINATION ${KDE_INSTALL_QTPLUGINDIR})
+install(FILES src/xyzthumbnail.desktop DESTINATION ${KDE_INSTALL_KSERVICES5DIR})
 
-install(TARGETS xyzthumbnail DESTINATION ${PLUGIN_INSTALL_DIR})
-install(FILES src/xyzthumbnail.desktop DESTINATION ${SERVICES_INSTALL_DIR})
+# QImageFormats plugin
+add_library(kimg_qxyz MODULE ${xyz_SRCS})
+target_link_libraries(kimg_qxyz KF5::KIOWidgets ${ZLIB_LIBRARIES})
+install(TARGETS kimg_qxyz DESTINATION "${KDE_INSTALL_QTPLUGINDIR}/imageformats")
+install(FILES src/xyz.desktop DESTINATION "${KDE_INSTALL_KSERVICES5DIR}/qimageioplugins")

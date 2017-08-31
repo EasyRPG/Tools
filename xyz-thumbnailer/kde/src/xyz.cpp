@@ -7,22 +7,19 @@
  * file that was distributed with this source code.
  */
 
-#include "xyzthumbnail.h"
+#include "xyz.h"
 
 #include <QString>
 #include <QImage>
 #include <zlib.h>
 
-extern "C"
-{
-	Q_DECL_EXPORT ThumbCreator *new_creator()
-	{
-		return new XyzImageCreator();
+extern "C" {
+	Q_DECL_EXPORT ThumbCreator* new_creator() {
+		return new XyzThumbnailCreator();
 	}
 }
 
-bool XyzImageCreator::create(const QString &path, int /*width*/, int /*height*/, QImage &img)
-{
+bool XyzThumbnailCreator::create(const QString &path, int /*width*/, int /*height*/, QImage &img) {
 	FILE* f = fopen(path.toUtf8().data(), "rb");
 	if (!f) {
 		return false;
@@ -49,6 +46,81 @@ bool XyzImageCreator::create(const QString &path, int /*width*/, int /*height*/,
 	}
 	fclose(f);
 
+	return XyzImage::toImage(data, size, img);
+}
+
+ThumbCreator::Flags XyzThumbnailCreator::flags() const {
+	return None;
+}
+
+QImageIOHandler* XyzImageIOPlugin::create(QIODevice *device, const QByteArray &format) const {
+	if (format.isNull() || format.toLower() == "xyz") {
+		XyzImageIOHandler* handler = new XyzImageIOHandler();
+		handler->setDevice(device);
+		handler->setFormat("xyz");
+		return handler;
+	}
+
+	return nullptr;
+}
+
+
+QImageIOPlugin::Capabilities XyzImageIOPlugin::capabilities(QIODevice *device, const QByteArray &format) const {
+	if (format.isNull() && !device) {
+		return 0;
+	}
+
+	if (!format.isNull() && format.toLower() != "xyz") {
+		return 0;
+	}
+
+	if (device && !XyzImageIOHandler::canRead(device)) {
+		return 0;
+	}
+
+	return CanRead;
+}
+
+bool XyzImageIOHandler::canRead() const {
+	return canRead(device());
+}
+
+bool XyzImageIOHandler::canRead(QIODevice* device) {
+	if (!device) {
+		qWarning("XyzImageIOHandler::canRead() called with 0 pointer");
+		return false;
+	}
+
+	QByteArray magic = device->peek(4);
+	return magic.size() == 4 && memcmp(magic.data(), "XYZ1", 4) == 0;
+}
+
+bool XyzImageIOHandler::read(QImage* image) {
+	if (!image) {
+		 qWarning("XyzImageIOHandler::read() called with 0 pointer");
+		 return false;
+	}
+
+	qint64 fsize = device()->size();
+
+	if (fsize <= 8 || fsize > 1024*1024*1024) {
+		return false;
+	}
+
+	char* data = (char*)malloc(fsize);
+	if (!data) {
+		return false;
+	}
+
+	qint64 res = device()->read(data, fsize);
+	if (res != fsize) {
+		return false;
+	}
+
+	return XyzImage::toImage(data, fsize, *image);
+}
+
+bool XyzImage::toImage(char* data, size_t size, QImage &img) {
 	if (strncmp((char *) data, "XYZ1", 4) != 0) {
 		return false;
 	}
@@ -97,9 +169,4 @@ bool XyzImageCreator::create(const QString &path, int /*width*/, int /*height*/,
 	// pixels owned by QImage
 
 	return !img.isNull();
-}
-
-ThumbCreator::Flags XyzImageCreator::flags() const
-{
-	return None;
 }

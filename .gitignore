@@ -12,6 +12,7 @@ ipch/
 CMakeCache.txt
 CMakeFiles/
 *.cmake
+!Modules/*.cmake
 
 .deps/
 autom4te.cache/

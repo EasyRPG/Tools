@@ -28,8 +28,7 @@ macro(tool_is_enabled tool)
 	mark_as_advanced(tool_upper)
 endmacro()
 
-#foreach(tool lcf2xml lmu2png png2xyz xyz2png gencache xyzcrush)
-foreach(tool lcf2xml png2xyz xyz2png gencache xyzcrush)
+foreach(tool lcf2xml lmu2png png2xyz xyz2png gencache xyzcrush)
 	enable_tool(${tool})
 endforeach()
 

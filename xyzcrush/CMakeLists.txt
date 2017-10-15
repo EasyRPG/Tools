@@ -17,6 +17,8 @@ add_library(zopfli
 	src/zopfli/zlib_container.c
 	src/zopfli/zopfli_lib.c)
 
+set_target_properties(zopfli PROPERTIES LINKER_LANGUAGE CXX)
+
 add_executable(xyzcrush src/xyzcrush.cpp)
 
 target_link_libraries(xyzcrush zopfli ZLIB::ZLIB)

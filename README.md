@@ -21,7 +21,7 @@ These are the currently available tools:
 
  * LMU2PNG: renders LMU maps to PNG images with events as tiles support.
 
-   Syntax: `lmu2png mapfile chipsetfile outputfile`
+   Syntax: `lmu2png mapfile [Options]`
 
  * PNG2XYZ: converts PNG images into XYZ images. It supports wildcards.
 

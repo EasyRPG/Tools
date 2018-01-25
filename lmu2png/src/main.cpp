@@ -163,7 +163,7 @@ int main(int argc, char** argv) {
 			exit(EXIT_FAILURE);
 		}
 
-		assert(map->chipset_id <= Data::chipsets.size());
+		assert(map->chipset_id <= (int)Data::chipsets.size());
 		std::string chipset_base(Data::chipsets[map->chipset_id - 1].chipset_name);
 
 		chipset = FindResource("ChipSet", chipset_base);
@@ -219,7 +219,7 @@ int main(int argc, char** argv) {
 		for (const RPG::Event& ev : map->events) {
 			const RPG::EventPage* evp = nullptr;
 			// Find highest page without conditions
-			for (int i = 0; i < ev.pages.size(); ++i) {
+			for (int i = 0; i < (int)ev.pages.size(); ++i) {
 				const auto& flg = ev.pages[i].condition.flags;
 				if (flg.switch_a || flg.switch_b || flg.variable || flg.item || flg.actor || flg.timer || flg.timer2)
 					continue;

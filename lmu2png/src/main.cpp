@@ -18,10 +18,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include <fstream>
 #include <string>
-#ifndef _WIN32
-#  include <unistd.h>
-#endif
 #include <SDL_image.h>
 #include <ldb_reader.h>
 #include <lmu_reader.h>
@@ -46,15 +44,13 @@ Options:
 )";
 
 std::string GetFileDirectory (const std::string& file) {
-  size_t found = file.find_last_of("/\\");
-  return found == std::string::npos ? "./" : file.substr(0,found + 1);
+	size_t found = file.find_last_of("/\\");
+	return found == std::string::npos ? "./" : file.substr(0,found + 1);
 }
 
 bool Exists(const std::string& filename) {
-#ifdef _WIN32
-	#define access _access
-#endif
-	return access(filename.c_str(), 0) != -1;
+    std::ifstream infile(filename.c_str());
+    return infile.good();
 }
 
 std::string path;

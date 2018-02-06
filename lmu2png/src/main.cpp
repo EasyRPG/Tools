@@ -56,9 +56,18 @@ bool Exists(const std::string& filename) {
 std::string path;
 
 std::string FindResource(const std::string& folder, const std::string& base_name) {
-	static const std::string rtp2k(getenv("RPG2K_RTP_PATH"));
-	static const std::string rtp2k3(getenv("RPG2K3_RTP_PATH"));
-	for (const auto& dir : {path, rtp2k, rtp2k3}) {
+	static const std::vector<std::string> dirs = [] {
+		char* rtp2k_ptr = getenv("RPG2K_RTP_PATH");
+		char* rtp2k3_ptr = getenv("RPG2K3_RTP_PATH");
+		std::vector<std::string> dirs = {path};
+		if (rtp2k_ptr)
+			dirs.emplace_back(rtp2k_ptr);
+		if (rtp2k3_ptr)
+			dirs.emplace_back(rtp2k3_ptr);
+		return dirs;
+	}();
+
+	for (const auto& dir : dirs) {
 		for (const auto& ext : {".png", ".bmp", ".xyz"}) {
 			if (Exists(dir + "/" + folder + "/" + base_name + ext))
 				return dir + "/" + folder + "/" + base_name + ext;

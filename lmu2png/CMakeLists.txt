@@ -10,7 +10,7 @@ add_executable(lmu2png
 	src/chipset.cpp
 	src/main.cpp)
 
-target_link_libraries(lmu2png SDL2::IMAGE LIBLCF::LIBLCF)
+target_link_libraries(lmu2png SDL2::IMAGE liblcf::liblcf)
 
 include(GNUInstallDirs)
 install(TARGETS lmu2png RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

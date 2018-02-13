@@ -7,7 +7,7 @@ find_package(liblcf REQUIRED)
 
 add_executable(lcf2xml src/main.cpp)
 
-target_link_libraries(lcf2xml LIBLCF::LIBLCF)
+target_link_libraries(lcf2xml liblcf::liblcf)
 
 include(GNUInstallDirs)
 install(TARGETS lcf2xml RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

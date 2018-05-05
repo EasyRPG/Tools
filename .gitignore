@@ -12,11 +12,13 @@ ipch/
 CMakeCache.txt
 CMakeFiles/
 *.cmake
+!Modules/*.cmake
 
 .deps/
 autom4te.cache/
 .dirstamp
 *.o
+*.a
 *~
 Makefile.in
 aclocal.m4
@@ -46,3 +48,6 @@ xyzcrush/xyzcrush
 xyzcrush/Makefile
 gencache/gencache
 gencache/Makefile
+
+*.ninja
+.ninja*

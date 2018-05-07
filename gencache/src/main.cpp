@@ -80,8 +80,13 @@ json parse_dir_recursive(const std::string& path, const int depth) {
 			}
 
 			/* add files */
-			if(dent->d_type == DT_REG || dent->d_type == DT_LNK)
+			if(dent->d_type == DT_REG || dent->d_type == DT_LNK) {
+				/* ExFont is a special file in the main directory, needs to be renamed */
+				if (lower_dirname.substr(0, lower_dirname.find_last_of(".")) == "exfont")
+					lower_dirname = "exfont";
+
 				r[lower_dirname] = dirname;
+			}
 		}
 	}
 	closedir(dir);

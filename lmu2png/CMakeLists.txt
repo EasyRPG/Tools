@@ -3,10 +3,7 @@ project(lmu2png VERSION 1.0 LANGUAGES CXX)
 
 set(CMAKE_MODULE_PATH APPEND "${CMAKE_CURRENT_SOURCE_DIR}/../Modules")
 
-if(MSVC)
-	# Exception handling
-	set_property(TARGET lmu2png PROPERTY COMPILE_FLAGS "/EHsc")
-endif()
+include(ConfigureWindows)
 
 find_package(liblcf REQUIRED)
 find_package(SDL2_image REQUIRED)

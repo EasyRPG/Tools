@@ -58,6 +58,8 @@ else()
     set(VC_LIB_PATH_SUFFIX lib/x86)
 endif()
 
+find_package(SDL2 REQUIRED)
+
 find_library(SDL2_IMAGE_LIBRARY
         NAMES SDL2_image
         HINTS
@@ -66,6 +68,9 @@ find_library(SDL2_IMAGE_LIBRARY
         PATH_SUFFIXES lib ${VC_LIB_PATH_SUFFIX}
         PATHS ${SDL2_IMAGE_PATH}
         )
+
+find_package(PNG)
+find_package(JPEG)
 
 if(SDL2_IMAGE_INCLUDE_DIR AND EXISTS "${SDL2_IMAGE_INCLUDE_DIR}/SDL_image.h")
     file(STRINGS "${SDL2_IMAGE_INCLUDE_DIR}/SDL_image.h" SDL2_IMAGE_VERSION_MAJOR_LINE REGEX "^#define[ \t]+SDL_IMAGE_MAJOR_VERSION[ \t]+[0-9]+$")
@@ -81,6 +86,24 @@ if(SDL2_IMAGE_INCLUDE_DIR AND EXISTS "${SDL2_IMAGE_INCLUDE_DIR}/SDL_image.h")
     unset(SDL2_IMAGE_VERSION_MAJOR)
     unset(SDL2_IMAGE_VERSION_MINOR)
     unset(SDL2_IMAGE_VERSION_PATCH)
+
+    if(NOT TARGET SDL2::IMAGE)
+        set(SDL_DEPS_INCLUDE_DIRS ${SDL2_INCLUDE_DIR} ${SDL2_IMAGE_INCLUDE_DIR})
+        set(SDL_DEPS_LIBS SDL2::SDL2)
+        if(PNG_FOUND)
+            list(APPEND SDL_DEPS_LIBS PNG::PNG)
+        endif()
+        if(JPEG_FOUND)
+            list(APPEND SDL_DEPS_LIBS ${JPEG_LIBRARY})
+        endif()
+
+        add_library(SDL2::IMAGE UNKNOWN IMPORTED)
+        set_target_properties(SDL2::IMAGE PROPERTIES
+            INTERFACE_INCLUDE_DIRECTORIES "${SDL_DEPS_INCLUDE_DIRS}"
+            IMPORTED_LOCATION "${SDL2_IMAGE_LIBRARY}"
+            INTERFACE_LINK_LIBRARIES "${SDL_DEPS_LIBS}")
+        unset(SDL_DEPS_INCLUDE_DIRS)
+    endif()
 endif()
 
 set(SDL2_IMAGE_LIBRARIES ${SDL2_IMAGE_LIBRARY})

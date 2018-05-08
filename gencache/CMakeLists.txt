@@ -3,6 +3,8 @@ project(gencache VERSION 1.0 LANGUAGES CXX)
 
 set(CMAKE_MODULE_PATH APPEND "${CMAKE_CURRENT_SOURCE_DIR}/../Modules")
 
+include(ConfigureWindows)
+
 find_package(ICU COMPONENTS uc data REQUIRED)
 
 add_executable(gencache src/main.cpp)

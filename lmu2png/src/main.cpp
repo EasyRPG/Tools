@@ -293,7 +293,7 @@ int main(int argc, char** argv) {
 		memset(csflag + 3100, cs.passable_data_lower[5], 900);
 
 		for (int i = 0; i < 12; i++)
-			memset(csflag + 4000 + i, cs.passable_data_lower[6 + i], 50);
+			memset(csflag + 4000 + (i * 50), cs.passable_data_lower[6 + i], 50);
 
 		for (int i = 0; i < 144; i++) {
 			csflag[5000 + i] = cs.passable_data_lower[18 + i];

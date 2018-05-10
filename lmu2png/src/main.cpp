@@ -27,6 +27,7 @@
 #include <rpg_map.h>
 #include <data.h>
 #include "chipset.h"
+#include "sdlxyz.h"
 
 // prevent SDL main rename
 #undef main
@@ -77,7 +78,11 @@ std::string FindResource(const std::string& folder, const std::string& base_name
 }
 
 SDL_Surface* LoadImage(const char* image_path, bool transparent = false) {
-	SDL_Surface* image = IMG_Load(image_path);
+	// Try XYZ, then IMG_Load
+	SDL_Surface* image = LoadImageXYZ(image_path);
+	if (!image) {
+		image = IMG_Load(image_path);
+	}
 	if (!image) {
 		std::cout << IMG_GetError() << std::endl;
 		exit(EXIT_FAILURE);
@@ -178,11 +183,6 @@ int main(int argc, char** argv) {
 		}
 	}
 
-	if (chipset.substr(chipset.length() - 3) == "xyz") {
-		std::cout << "Can't open chipset " << chipset << ". XYZ format is not supported." << std::endl;
-		exit(EXIT_FAILURE);
-	}
-
 	SDL_Surface* chipset_img = LoadImage(chipset.c_str(), true);
 
 	SDL_Surface* output_img = SDL_CreateRGBSurface(0, map->width * 16, map->height * 16, 32, 0, 0, 0, 0);
@@ -192,9 +192,6 @@ int main(int argc, char** argv) {
 		std::string background(FindResource("Panorama", map->parallax_name));
 		if (background.empty()) {
 			std::cout << "Can't find parallax background " << map->parallax_name << std::endl;
-		} else if (background.substr(background.length() - 3) == "xyz") {
-			std::cout << "Can't open parallax background " << background << ". XYZ format is not supported." << std::endl;
-			exit(EXIT_FAILURE);
 		} else {
 			SDL_Surface* background_img(LoadImage(background.c_str()));
 			SDL_Rect dst_rect = background_img->clip_rect;
@@ -239,10 +236,6 @@ int main(int argc, char** argv) {
 				std::string charset(FindResource("CharSet", evp->character_name));
 				if (charset.empty()) {
 					std::cout << "Can't find charset " << evp->character_name << std::endl;
-					continue;
-				}
-				if (charset.substr(charset.length() - 3) == "xyz") {
-					std::cout << "Can't open chipset " << charset << ". XYZ format is not supported." << std::endl;
 					continue;
 				}
 

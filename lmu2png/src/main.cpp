@@ -285,16 +285,17 @@ int main(int argc, char** argv) {
 			exit(EXIT_FAILURE);
 		}
 		// Load flags.
-		memset(csflag + 0, cs.passable_data_lower[0], 1000);
-		memset(csflag + 1000, cs.passable_data_lower[1], 1000);
-		memset(csflag + 2000, cs.passable_data_lower[2], 1000);
-		memset(csflag + 3000, cs.passable_data_lower[3], 50);
-		memset(csflag + 3050, cs.passable_data_lower[4], 50);
-		memset(csflag + 3100, cs.passable_data_lower[5], 900);
-
+		// The first 18 in lower cover various zones.
+		// Water A/B/C
+		for (int i = 0; i < 3; i++)
+			memset(csflag + (1000 * i), cs.passable_data_lower[i], 1000);
+		// Animated tiles, made up of 3 sets of 50.
+		for (int i = 0; i < 3; i++)
+			memset(csflag + 3000 + (i * 50), cs.passable_data_lower[3 + i], 50);
+		// Terrain ATs, made up of 12 sets of 50.
 		for (int i = 0; i < 12; i++)
 			memset(csflag + 4000 + (i * 50), cs.passable_data_lower[6 + i], 50);
-
+		// Lower/upper 144-tile pages, made up of 144 individual flag bytes per page.
 		for (int i = 0; i < 144; i++) {
 			csflag[5000 + i] = cs.passable_data_lower[18 + i];
 			csflag[10000 + i] = cs.passable_data_upper[i];

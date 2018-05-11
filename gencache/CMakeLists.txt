@@ -11,5 +11,7 @@ add_executable(gencache src/main.cpp)
 
 target_link_libraries(gencache ICU::uc ICU::data)
 
+target_compile_features(gencache PRIVATE cxx_std_11)
+
 include(GNUInstallDirs)
 install(TARGETS gencache RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

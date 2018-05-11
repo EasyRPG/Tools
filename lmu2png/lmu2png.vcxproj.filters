@@ -2,9 +2,11 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClInclude Include="src\chipset.h" />
+    <ClInclude Include="src\sdlxyz.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\chipset.cpp" />
+    <ClCompile Include="src\sdlxyz.cpp" />
+    <ClCompile Include="src\main.cpp" />
   </ItemGroup>
 </Project>

@@ -20,9 +20,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\chipset.h" />
+    <ClInclude Include="src\sdlxyz.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\chipset.cpp" />
+    <ClCompile Include="src\sdlxyz.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

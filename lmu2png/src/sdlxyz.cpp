@@ -68,17 +68,17 @@ static SDL_Surface* XYZLoaderCore(FILE* f) {
 	if (tmp < 0)
 		return NULL;
 	h |= tmp << 8;
-	size_t total = 768 + (w * h);
-	size_t totalBackup = total;
+	uLongf total = 768 + (w * h);
+	uLongf totalBackup = total;
 	// Now the room for error has mostly ceded, allocate & fill buffers
-	unsigned char * compressedData = (unsigned char *) malloc(compressedDataSize);
+	Bytef * compressedData = (Bytef *) malloc(compressedDataSize);
 	if (!compressedData)
 		return NULL;
 	if (fread(compressedData, compressedDataSize, 1, f) != 1) {
 		free(compressedData);
 		return NULL;
 	}
-	unsigned char * decompressedData = (unsigned char *) malloc(total);
+	Bytef * decompressedData = (Bytef *) malloc(total);
 	if (!decompressedData) {
 		free(compressedData);
 		return NULL;

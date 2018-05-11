@@ -15,8 +15,9 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "sdlxyz.h"
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <zlib.h>
 
 static SDL_Surface* XYZLoaderMakeSurface(int w, int h, unsigned char * data) {

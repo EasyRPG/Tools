@@ -12,6 +12,7 @@ find_package(liblcf REQUIRED)
 find_package(SDL2_image REQUIRED)
 
 add_executable(lmu2png
+	src/sdlxyz.cpp
 	src/chipset.cpp
 	src/main.cpp)
 

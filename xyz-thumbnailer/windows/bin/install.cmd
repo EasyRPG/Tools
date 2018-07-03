@@ -14,7 +14,7 @@ set "batchPath=%~dp0"
 setlocal EnableDelayedExpansion
 
 :: 64bit check
-IF "%PROCESSOR_ARCHITECTURE%"=="x86" (set bit=x86) else (set bit=amd64)
+IF "%PROCESSOR_ARCHITECTURE%"=="x86" (set bit=x86) else (set bit=x64)
 
 :: Elevate to admin and run regsvr32
 

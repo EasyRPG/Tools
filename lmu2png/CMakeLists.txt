@@ -3,11 +3,9 @@ project(lmu2png VERSION 1.0 LANGUAGES CXX)
 
 set(CMAKE_MODULE_PATH APPEND "${CMAKE_CURRENT_SOURCE_DIR}/../Modules")
 
-if(MSVC)
-	# Exception handling
-	set_property(TARGET lmu2png PROPERTY COMPILE_FLAGS "/EHsc")
-endif()
+include(ConfigureWindows)
 
+find_package(ZLIB REQUIRED)
 find_package(liblcf REQUIRED)
 find_package(SDL2_image REQUIRED)
 
@@ -16,7 +14,9 @@ add_executable(lmu2png
 	src/chipset.cpp
 	src/main.cpp)
 
-target_link_libraries(lmu2png SDL2::IMAGE liblcf::liblcf)
+target_link_libraries(lmu2png ZLIB::ZLIB SDL2::IMAGE liblcf::liblcf)
+
+target_compile_features(lmu2png PRIVATE cxx_std_11)
 
 include(GNUInstallDirs)
 install(TARGETS lmu2png RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

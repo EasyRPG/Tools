@@ -11,5 +11,7 @@ add_executable(lcf2xml src/main.cpp)
 
 target_link_libraries(lcf2xml liblcf::liblcf)
 
+target_compile_features(lcf2xml PRIVATE cxx_std_11)
+
 include(GNUInstallDirs)
 install(TARGETS lcf2xml RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

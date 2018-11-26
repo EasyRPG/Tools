@@ -15,9 +15,10 @@ Tool details
 
 These are the currently available tools:
 
- * LCF2XML: converts LMU, LMT, LDB and LSD files into XML and vice-versa.
+ * LCF2XML: converts LMU, LMT, LDB and LSD files into XML and vice versa. It supports
+            wildcards.
 
-   Syntax: `lcf2xml inputfile outputfile`
+   Syntax: `lcf2xml file1 [... fileN]`
 
  * LMU2PNG: renders LMU maps to PNG images with events as tiles support.
 
@@ -40,7 +41,7 @@ These are the currently available tools:
    Syntax: `gencache [Options] [Directory]`
 
  * xyz-thumbnailer: displays thumbnails for XYZ files in your file manager
-                    (currently Windows and Linux/GTK3/KDE5 only)
+                    (currently Windows and Linux/GTK3/KDE5 only).
 
    Windows: Shell extension for Windows explorer, see included README.md for
             install instructions.

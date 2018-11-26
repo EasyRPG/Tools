@@ -9,6 +9,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "ldb_reader.h"
 #include "lmt_reader.h"
@@ -19,6 +20,17 @@
 #ifndef _WIN32
 #include <dirent.h>
 #endif
+
+#ifdef __MINGW64_VERSION_MAJOR
+int _dowildcard = -1; /* enable wildcard expansion for mingw-w64 */
+#endif
+
+enum FileCategories
+{
+	FileCategory_LCF,
+	FileCategory_XML,
+	FileCategory_Invalid
+};
 
 enum FileTypes
 {
@@ -34,6 +46,7 @@ enum FileTypes
 };
 
 std::string GetFilename(const std::string& str);
+FileCategories GetFilecategory(const std::string& in_file);
 FileTypes GetFiletype(const std::string& in_file, std::string& out_extension);
 void PrintReaderError(const std::string data);
 int ReaderWriteToFile(const std::string& in, const std::string& out, FileTypes in_type);
@@ -42,37 +55,50 @@ int main(int argc, char** argv)
 {
 	if (argc <= 1)
 	{
-		std::cerr << "Lcf2Xml - Converts RPG Maker 2k/2k3 Files to XML and vice versa" << std::endl;
-		std::cerr << "Usage: lcf2xml [FILE] [OUTFILE]" << std::endl;
-		//std::cerr << "If OUTFILE is missing the resulting file is named FILE with the extension replaced" << std::endl;
+		std::cerr << "LCF2XML - Converts RPG Maker 2000/2003 Files into XML and vice versa" << std::endl;
+		std::cerr << "Usage: " << argv[0] << " file1 [... fileN]" << std::endl;
+
 		return 1;
 	}
 
-	std::string infile;
+	std::vector<std::string> infiles;
 	std::string outfile;
 
-	infile = argv[1];
-
+	FileCategories category = FileCategory_Invalid;
 	FileTypes type;
 	std::string extension;
+	unsigned int errors = 0;
 
-	if (argc >= 3)
-	{
-		// OUTFILE
-		outfile = argv[2];
-		type = GetFiletype(infile, extension);
+	for (int i = 1; i < argc; ++i) {
+		if (category == FileCategory_Invalid) {
+			category = GetFilecategory(argv[i]);
+			if (category == FileCategory_Invalid) {
+				std::cerr << "Invalid file " << argv[i] << "." << std::endl;
+				errors++;
+				continue;
+			}
+		}
+
+		if (category == GetFilecategory(argv[i])) {
+			infiles.push_back(argv[i]);
+		}
 	}
-	else
-	{
-		// No OUTFILE, add extension based on detected filetype
-		outfile = GetFilename(infile);
-		type = GetFiletype(infile, extension);
+
+	for (std::vector<std::string>::iterator it = infiles.begin(); it != infiles.end(); ++it) {
+		outfile = GetFilename(*it);
+		type = GetFiletype(*it, extension);
 		outfile += extension;
+		if (ReaderWriteToFile(*it, outfile, type) != 0) {
+			errors++;
+		}
 	}
 
-	return ReaderWriteToFile(infile, outfile, type);
-}
+	if (errors > 0) {
+		return 1;
+	}
 
+	return 0;
+}
 
 /** Returns the filename (without extension). */
 std::string GetFilename(const std::string& str)
@@ -117,6 +143,26 @@ std::string GetPath(const std::string& str) {
 	return s;
 }
 
+FileCategories GetFilecategory(const std::string& in_file)
+{
+	std::ifstream in(in_file.c_str());
+
+	char buf[4];
+	memset(buf, '\0', 4);
+
+	in.seekg(1, std::ios::beg);
+	in.read(buf, 3);
+	std::string input(buf);
+
+	if (input == "Lcf") {
+		return FileCategory_LCF;
+	} else if (input == "?xm") {
+		return FileCategory_XML;
+	}
+
+	return FileCategory_Invalid;
+}
+
 /** Uses heuristics to detect the file type. */
 FileTypes GetFiletype(const std::string& in_file, std::string& out_extension)
 {
@@ -131,12 +177,16 @@ FileTypes GetFiletype(const std::string& in_file, std::string& out_extension)
 
 	out_extension = ".xml";
 	if (input == "LcfDataBas") {
+		out_extension = ".edb";
 		return FileType_LCF_Database;
 	} else if (input == "LcfMapTree") {
+		out_extension = ".emt";
 		return FileType_LCF_MapTree;
 	} else if (input == "LcfSaveDat") {
+		out_extension = ".esd";
 		return FileType_LCF_SaveData;
 	} else if (input == "LcfMapUnit") {
+		out_extension = ".emu";
 		return FileType_LCF_MapUnit;
 	} else if (input == "?xml versi") {
 		in.read(buf, 128);

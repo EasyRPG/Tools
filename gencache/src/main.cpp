@@ -4,6 +4,7 @@
  * http://opensource.org/licenses/MIT
  */
 
+#include <unicode/normalizer2.h>
 #include <unicode/unistr.h>
 #ifdef _WIN32
 #  define VC_EXTRALEAN
@@ -29,16 +30,16 @@
 
 using json = nlohmann::json;
 
+const icu::Normalizer2* icu_normalizer;
+#ifdef _WIN32
+const char* codepage;
+#endif
+
 json parse_dir_recursive(const std::string& path, const int depth) {
 	DIR *dir;
 	struct dirent *dent;
 	json r;
-
-#ifdef _WIN32
-	// Will only work when the game has files in the current codepage
-	// but should be good enough for the typical use case
-	const char* codepage = std::string("cp" + std::to_string(GetACP())).c_str();
-#endif
+	UErrorCode icu_error = U_ZERO_ERROR;
 
 	/* do not recurse any further */
 	if(depth == 0)
@@ -48,16 +49,26 @@ json parse_dir_recursive(const std::string& path, const int depth) {
 	if(dir != nullptr) {
 		while((dent = readdir(dir)) != nullptr) {
 			std::string dirname;
-			/* unicode aware lowercase conversion */
 			std::string lower_dirname;
+			icu::UnicodeString uni_lower_dirname;
 
+			/* unicode aware lowercase conversion */
 #ifdef _WIN32
-			icu::UnicodeString(dent->d_name, codepage).toLower().toUTF8String(lower_dirname);
 			icu::UnicodeString(dent->d_name, codepage).toUTF8String(dirname);
+			uni_lower_dirname = icu::UnicodeString(dent->d_name, codepage).toLower();
 #else
 			dirname = std::string(dent->d_name);
-			icu::UnicodeString(dent->d_name).toLower().toUTF8String(lower_dirname);
+			uni_lower_dirname = icu::UnicodeString(dent->d_name, "utf-8").toLower();
 #endif
+			/* normalization */
+			icu::UnicodeString normalized_dirname =
+				icu_normalizer->normalize(uni_lower_dirname, icu_error);
+			if (U_FAILURE(icu_error)) {
+				uni_lower_dirname.toUTF8String(lower_dirname);
+				std::cerr << "Failed to normalize \"" << lower_dirname << "\"! Using lowercase conversion." << std::endl;
+			} else {
+				normalized_dirname.toUTF8String(lower_dirname);
+			}
 
 			/* dig deeper, but skip upper and current directory */
 			if(dent->d_type == DT_DIR && dirname != ".." && dirname != ".") {
@@ -92,6 +103,7 @@ json parse_dir_recursive(const std::string& path, const int depth) {
 
 int main(int argc, const char* argv[]) {
 	struct stat path_info;
+	UErrorCode icu_error = U_ZERO_ERROR;
 
 	/* defaults */
 	int recursion_depth = 3;
@@ -119,18 +131,18 @@ int main(int argc, const char* argv[]) {
 			if (i + 1 < argc) {
 				output = argv[++i];
 			} else {
-				std::cerr << "--output without file name argument" << std::endl;
+				std::cerr << "--output without file name argument." << std::endl;
 				return 1;
 			}
 		} else if((arg == "--recurse") || (arg == "-r")) {
 			if (i + 1 < argc) {
 				std::istringstream iss(argv[++i]);
 				if (!(iss >> recursion_depth)) {
-					std::cerr << "--recurse option needs a number argument" << std::endl;
+					std::cerr << "--recurse option needs a number argument." << std::endl;
 					return 1;
 				}
 			} else {
-				std::cerr << "--recurse without depth argument" << std::endl;
+				std::cerr << "--recurse without depth argument." << std::endl;
 				return 1;
 			}
 		} else {
@@ -149,6 +161,18 @@ int main(int argc, const char* argv[]) {
 			}
 		}
 	}
+
+	icu_normalizer = icu::Normalizer2::getNFKCInstance(icu_error);
+	if (U_FAILURE(icu_error)) {
+		std::cerr << "Failed to initialize ICU NFKC Normalizer!" << std::endl;
+		return 1;
+	}
+
+#ifdef _WIN32
+	// Will only work when the game has files in the current codepage
+	// but should be good enough for the typical use case
+	codepage = std::string("cp" + std::to_string(GetACP())).c_str();
+#endif
 
 	/* get directory contents */
 	json cache = parse_dir_recursive(path, recursion_depth);

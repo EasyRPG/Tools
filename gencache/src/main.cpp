@@ -13,10 +13,6 @@
 #  endif
 #  include <Windows.h>
 #  include "dirent_win.h"
-   /* symlinks are not supported under windows currently */
-#  ifndef DT_LNK
-#    define DT_LNK DT_REG
-#  endif
 #else
 #  include <dirent.h>
 #endif

@@ -116,7 +116,7 @@ int main(int argc, const char* argv[]) {
 		std::string arg = argv[i];
 
 		if ((arg == "--help") || (arg == "-h")) {
-			std::cout << "gencache - JSON cache generator for EasyRPG Player ports" << std::endl << std::endl;
+			std::cout << "gencache " PACKAGE_VERSION " - JSON cache generator for EasyRPG Player ports" << std::endl << std::endl;
 			std::cout << "Usage: gencache [ Options ] [ Directory ]" << std::endl;
 			std::cout << "Options:" << std::endl;
 			std::cout << "  -h, --help             This usage message" << std::endl;

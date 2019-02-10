@@ -8,4 +8,4 @@ gencache_CXXFLAGS = \
 gencache_LDADD = \
 	$(ICU_LIBS)
 
-EXTRA_DIST = README.md
+EXTRA_DIST = AUTHORS.md README.md

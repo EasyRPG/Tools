@@ -9,9 +9,7 @@
 #ifdef _WIN32
 #  define VC_EXTRALEAN
 #  define WIN32_LEAN_AND_MEAN
-#  ifndef NOMINMAX
-#    define NOMINMAX
-#  endif
+#  define NOMINMAX
 #  include <Windows.h>
 #  include "dirent_win.h"
 #else
@@ -31,9 +29,6 @@
 using json = nlohmann::json;
 
 const icu::Normalizer2* icu_normalizer;
-#ifdef _WIN32
-const char* codepage;
-#endif
 
 json parse_dir_recursive(const std::string& path, const int depth) {
 	DIR *dir;
@@ -54,8 +49,8 @@ json parse_dir_recursive(const std::string& path, const int depth) {
 
 			/* unicode aware lowercase conversion */
 #ifdef _WIN32
-			icu::UnicodeString(dent->d_name, codepage).toUTF8String(dirname);
-			uni_lower_dirname = icu::UnicodeString(dent->d_name, codepage).toLower();
+			icu::UnicodeString(dent->d_name).toUTF8String(dirname);
+			uni_lower_dirname = icu::UnicodeString(dent->d_name).toLower();
 #else
 			dirname = std::string(dent->d_name);
 			uni_lower_dirname = icu::UnicodeString(dent->d_name, "utf-8").toLower();
@@ -167,12 +162,6 @@ int main(int argc, const char* argv[]) {
 		std::cerr << "Failed to initialize ICU NFKC Normalizer!" << std::endl;
 		return 1;
 	}
-
-#ifdef _WIN32
-	// Will only work when the game has files in the current codepage
-	// but should be good enough for the typical use case
-	codepage = std::string("cp" + std::to_string(GetACP())).c_str();
-#endif
 
 	/* get directory contents */
 	json cache = parse_dir_recursive(path, recursion_depth);

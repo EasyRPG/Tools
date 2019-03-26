@@ -39,12 +39,12 @@ json parse_dir_recursive(const std::string& path, const int depth, const bool fi
 	UErrorCode icu_error = U_ZERO_ERROR;
 
 	/* do not recurse any further */
-	if(depth == 0)
+	if (depth == 0)
 		return r;
 
 	dir = opendir(path.c_str());
-	if(dir != nullptr) {
-		while((dent = readdir(dir)) != nullptr) {
+	if (dir != nullptr) {
+		while ((dent = readdir(dir)) != nullptr) {
 			std::string dirname;
 			std::string lower_dirname;
 			icu::UnicodeString uni_lower_dirname;
@@ -68,7 +68,7 @@ json parse_dir_recursive(const std::string& path, const int depth, const bool fi
 			}
 
 			/* dig deeper, but skip upper and current directory */
-			if(dent->d_type == DT_DIR && dirname != ".." && dirname != ".") {
+			if (dent->d_type == DT_DIR && dirname != ".." && dirname != ".") {
 				json temp = parse_dir_recursive(path + "/" + dirname, depth - 1);
 				if (!temp.empty()) {
 					r[lower_dirname] = temp;
@@ -76,7 +76,7 @@ json parse_dir_recursive(const std::string& path, const int depth, const bool fi
 			}
 
 			/* add files */
-			if(dent->d_type == DT_REG || dent->d_type == DT_LNK) {
+			if (dent->d_type == DT_REG || dent->d_type == DT_LNK) {
 				if (first) {
 					/* ExFont is a special file in the main directory, needs to be renamed */
 					if (strip_ext(lower_dirname) == "exfont") {
@@ -119,16 +119,16 @@ int main(int argc, const char* argv[]) {
 			std::cout << "  -r, --recurse <depth>  Recursion depth (default: " << std::to_string(recursion_depth) << ")" << std::endl << std::endl;
 			std::cout << "It uses the current directory if not given as argument." << std::endl;
 			return 0;
-		} else if((arg == "--pretty") || (arg == "-p")) {
+		} else if ((arg == "--pretty") || (arg == "-p")) {
 			pretty_print = true;
-		} else if((arg == "--output") || (arg == "-o")) {
+		} else if ((arg == "--output") || (arg == "-o")) {
 			if (i + 1 < argc) {
 				output = argv[++i];
 			} else {
 				std::cerr << "--output without file name argument." << std::endl;
 				return 1;
 			}
-		} else if((arg == "--recurse") || (arg == "-r")) {
+		} else if ((arg == "--recurse") || (arg == "-r")) {
 			if (i + 1 < argc) {
 				std::istringstream iss(argv[++i]);
 				if (!(iss >> recursion_depth)) {
@@ -141,10 +141,10 @@ int main(int argc, const char* argv[]) {
 			}
 		} else {
 			if (path == ".") {
-				if(stat(arg.c_str(), &path_info) != 0) {
+				if (stat(arg.c_str(), &path_info) != 0) {
 					std::cerr << "Cannot access directory: \"" << arg << "\"" << std::endl;
 					return 1;
-				} else if(!(path_info.st_mode & S_IFDIR)) {
+				} else if (!(path_info.st_mode & S_IFDIR)) {
 					std::cerr << "Not a directory: \"" << arg << "\"" << std::endl;
 					return 1;
 				} else {

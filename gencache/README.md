@@ -22,6 +22,7 @@ Requirements
 ------------
 
  * ICU
+ * nlohmann json (included)
 
 
 Daily builds
@@ -58,8 +59,8 @@ You may tweak build parameters and environment variables, run
 License
 -------
 
-GENCACHE is free software under the MIT license. See the file COPYING for
+GENCACHE is free software under the ISC license. See the file COPYING for
 details.
 
 It uses the "JSON for Modern C++" header made by Niels Lohmann,
-available also under MIT license at: https://github.com/nlohmann/json
+available under MIT license at: https://github.com/nlohmann/json

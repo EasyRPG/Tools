@@ -20,17 +20,19 @@
 #include <sstream>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <ctime>
 
 #include "json.hpp"
-
-/* legacy mode, linear list */
-#define LEGACY 1
 
 using json = nlohmann::json;
 
 const icu::Normalizer2* icu_normalizer;
 
-json parse_dir_recursive(const std::string& path, const int depth) {
+std::string strip_ext(std::string in_file) {
+	return in_file.substr(0, in_file.find_last_of("."));
+}
+
+json parse_dir_recursive(const std::string& path, const int depth, const bool first = false) {
 	DIR *dir;
 	struct dirent *dent;
 	json r;
@@ -69,25 +71,22 @@ json parse_dir_recursive(const std::string& path, const int depth) {
 			if(dent->d_type == DT_DIR && dirname != ".." && dirname != ".") {
 				json temp = parse_dir_recursive(path + "/" + dirname, depth - 1);
 				if (!temp.empty()) {
-#if LEGACY
-					for (json::iterator it = temp.begin(); it != temp.end(); ++it) {
-						std::string val = it.value();
-						std::string key = it.key();
-						r[lower_dirname + "/" + key.substr(0, key.find_last_of("."))] = dirname + "/" + val;
-					}
-#else
 					r[lower_dirname] = temp;
-#endif
 				}
 			}
 
 			/* add files */
 			if(dent->d_type == DT_REG || dent->d_type == DT_LNK) {
-				/* ExFont is a special file in the main directory, needs to be renamed */
-				if (lower_dirname.substr(0, lower_dirname.find_last_of(".")) == "exfont")
-					lower_dirname = "exfont";
+				if (first) {
+					/* ExFont is a special file in the main directory, needs to be renamed */
+					if (strip_ext(lower_dirname) == "exfont") {
+						lower_dirname = "exfont";
+					}
 
-				r[lower_dirname] = dirname;
+					r[lower_dirname] = dirname;
+				} else {
+					r[strip_ext(lower_dirname)] = dirname;
+				}
 			}
 		}
 	}
@@ -164,12 +163,27 @@ int main(int argc, const char* argv[]) {
 	}
 
 	/* get directory contents */
-	json cache = parse_dir_recursive(path, recursion_depth);
+	json cache = parse_dir_recursive(path, recursion_depth, true);
+
+	std::time_t t = std::time(nullptr);
+	std::string date = "2000-04-05";
+	char datebuf[11];
+	if (std::strftime(datebuf, sizeof(datebuf), "%F", std::localtime(&t)))
+		date = std::string(datebuf);
+
+	/* add metadata */
+	json out = {
+		"metadata", {
+			{ "version", 2 },
+			{ "date", date }
+		},
+		"cache", cache
+	};
 
 	/* write to cache file */
 	std::ofstream cache_file;
 	cache_file.open(output);
-	cache_file << cache.dump(pretty_print ? 2 : -1);
+	cache_file << out.dump(pretty_print ? 2 : -1);
 	cache_file.close();
 	std::cout << "JSON cache has been written to \"" << output << "\"." << std::endl;
 

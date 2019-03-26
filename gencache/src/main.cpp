@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2016 gencache authors
- * This file is released under the MIT License
- * http://opensource.org/licenses/MIT
+ * Copyright (c) 2016-2019 gencache authors
+ * This file is released under the ISC License
+ * https://opensource.org/licenses/ISC
  */
 
 #include <unicode/normalizer2.h>

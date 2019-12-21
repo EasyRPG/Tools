@@ -22,7 +22,8 @@ Requirements
 ------------
 
  * liblcf - https://github.com/EasyRPG/liblcf
- * libpng
+ * zlib
+ * SDL2_image (enable support for at least png images)
 
 
 Daily builds

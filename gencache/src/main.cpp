@@ -28,8 +28,16 @@ using json = nlohmann::json;
 
 const icu::Normalizer2* icu_normalizer;
 
-std::string strip_ext(std::string in_file) {
+std::string strip_ext(const std::string& in_file) {
 	return in_file.substr(0, in_file.find_last_of("."));
+}
+
+std::string basename(const std::string& in_file) {
+	size_t pos = in_file.find_last_of("/");
+	if (pos == std::string::npos) {
+		return in_file;
+	}
+	return in_file.substr(pos + 1);
 }
 
 json parse_dir_recursive(const std::string& path, const int depth, const bool first = false) {
@@ -44,6 +52,11 @@ json parse_dir_recursive(const std::string& path, const int depth, const bool fi
 
 	dir = opendir(path.c_str());
 	if (dir != nullptr) {
+		std::string base_name = basename(path);
+		if (base_name != ".") {
+			r["_dirname"] = basename(path);
+		}
+
 		while ((dent = readdir(dir)) != nullptr) {
 			std::string dirname;
 			std::string lower_dirname;
@@ -65,6 +78,11 @@ json parse_dir_recursive(const std::string& path, const int depth, const bool fi
 				std::cerr << "Failed to normalize \"" << lower_dirname << "\"! Using lowercase conversion." << std::endl;
 			} else {
 				normalized_dirname.toUTF8String(lower_dirname);
+			}
+
+			if (dirname == "_dirname") {
+				std::cerr << "Skipping _dirname: File conflicts with reserved keyword!" << std::endl;
+				continue;
 			}
 
 			/* dig deeper, but skip upper and current directory */

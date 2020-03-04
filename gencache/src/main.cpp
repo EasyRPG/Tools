@@ -7,9 +7,6 @@
 #include <unicode/normalizer2.h>
 #include <unicode/unistr.h>
 #ifdef _WIN32
-#  define VC_EXTRALEAN
-#  define WIN32_LEAN_AND_MEAN
-#  define NOMINMAX
 #  include <Windows.h>
 #  include "dirent_win.h"
 #else
@@ -41,8 +38,12 @@ std::string basename(const std::string& in_file) {
 }
 
 json parse_dir_recursive(const std::string& path, const int depth, const bool first = false) {
-	DIR *dir;
-	struct dirent *dent;
+#ifdef _WIN32
+	struct _wdirent* dent;
+#else
+	struct dirent* dent;
+#endif
+
 	json r;
 	UErrorCode icu_error = U_ZERO_ERROR;
 
@@ -50,14 +51,22 @@ json parse_dir_recursive(const std::string& path, const int depth, const bool fi
 	if (depth == 0)
 		return r;
 
-	dir = opendir(path.c_str());
+#ifdef _WIN32
+	auto dir = _wopendir(reinterpret_cast<const wchar_t*>(
+			icu::UnicodeString::fromUTF8(path).getTerminatedBuffer()));
+#else
+	auto dir = opendir(path.c_str());
+#endif
 	if (dir != nullptr) {
-		std::string base_name = basename(path);
-		if (base_name != ".") {
+		if (!first) {
 			r["_dirname"] = basename(path);
 		}
 
+#ifdef _WIN32
+		while ((dent = _wreaddir(dir)) != nullptr) {
+#else
 		while ((dent = readdir(dir)) != nullptr) {
+#endif
 			std::string dirname;
 			std::string lower_dirname;
 			icu::UnicodeString uni_lower_dirname;
@@ -108,7 +117,11 @@ json parse_dir_recursive(const std::string& path, const int depth, const bool fi
 			}
 		}
 	}
+#ifdef _WIN32
+	_wclosedir(dir);
+#else
 	closedir(dir);
+#endif
 
 	return r;
 }

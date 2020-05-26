@@ -15,11 +15,6 @@ Tool details
 
 These are the currently available tools:
 
- * LCF2XML: converts LMU, LMT, LDB and LSD files into XML and vice versa. It supports
-            wildcards.
-
-   Syntax: `lcf2xml file1 [... fileN]`
-
  * LMU2PNG: renders LMU maps to PNG images with events as tiles support.
 
    Syntax: `lmu2png mapfile [Options]`

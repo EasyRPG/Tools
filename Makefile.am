@@ -1,9 +1,5 @@
 SUBDIRS = 
 
-if ENABLE_LCF2XML
-SUBDIRS += lcf2xml
-endif
-
 if ENABLE_LMU2PNG
 SUBDIRS += lmu2png
 endif

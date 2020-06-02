@@ -16,7 +16,6 @@ AC_DEFUN([EASYRPG_TOOL_ENABLE],[
 	AM_CONDITIONAL(ENABLE_[]translit([[$1]], [a-z], [A-Z]), [test "x$enable_$1" = xyes])
 ])
 
-EASYRPG_TOOL_ENABLE([lcf2xml])
 EASYRPG_TOOL_ENABLE([lmu2png])
 EASYRPG_TOOL_ENABLE([png2xyz])
 EASYRPG_TOOL_ENABLE([xyz2png])
@@ -34,7 +33,6 @@ echo ""
 echo "  prefix:  $prefix"
 echo ""
 echo "Converters:"
-echo "  lcf2xml:  $enable_lcf2xml"
 echo "  lmu2png:  $enable_lmu2png"
 echo "  png2xyz:  $enable_png2xyz"
 echo "  xyz2png:  $enable_xyz2png"

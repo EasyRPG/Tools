@@ -22,11 +22,11 @@
 #include <string>
 #include <algorithm>
 #include <SDL_image.h>
-#include <ldb_reader.h>
-#include <lmu_reader.h>
-#include <reader_lcf.h>
-#include <rpg_map.h>
-#include <data.h>
+#include <lcf/ldb/reader.h>
+#include <lcf/lmu/reader.h>
+#include <lcf/reader_lcf.h>
+#include <lcf/rpg/map.h>
+#include <lcf/data.h>
 #include "chipset.h"
 #include "sdlxyz.h"
 
@@ -97,7 +97,7 @@ SDL_Surface* LoadImage(const char* image_path, bool transparent = false) {
 	return image;
 }
 
-void DrawTiles(SDL_Surface* output_img, stChipset * gen, uint8_t * csflag, std::unique_ptr<RPG::Map> & map, int show_lowertiles, int show_uppertiles, int flaglayer) {
+void DrawTiles(SDL_Surface* output_img, stChipset * gen, uint8_t * csflag, std::unique_ptr<lcf::rpg::Map> & map, int show_lowertiles, int show_uppertiles, int flaglayer) {
 	for (int y = 0; y < map->height; ++y) {
 		for (int x = 0; x < map->width; ++x) {
 			// Different logic between these.
@@ -118,9 +118,9 @@ void DrawTiles(SDL_Surface* output_img, stChipset * gen, uint8_t * csflag, std::
 	}
 }
 
-void DrawEvents(SDL_Surface* output_img, stChipset * gen, std::unique_ptr<RPG::Map> & map, int layer) {
-	for (const RPG::Event& ev : map->events) {
-		const RPG::EventPage* evp = nullptr;
+void DrawEvents(SDL_Surface* output_img, stChipset * gen, std::unique_ptr<lcf::rpg::Map> & map, int layer) {
+	for (const lcf::rpg::Event& ev : map->events) {
+		const lcf::rpg::EventPage* evp = nullptr;
 		// Find highest page without conditions
 		for (int i = 0; i < (int)ev.pages.size(); ++i) {
 			const auto& flg = ev.pages[i].condition.flags;
@@ -152,7 +152,7 @@ void DrawEvents(SDL_Surface* output_img, stChipset * gen, std::unique_ptr<RPG::M
 	}
 }
 
-void RenderCore(SDL_Surface* output_img, std::string chipset, uint8_t * csflag, std::unique_ptr<RPG::Map> & map, int show_background, int show_lowertiles, int show_uppertiles, int show_events) {
+void RenderCore(SDL_Surface* output_img, std::string chipset, uint8_t * csflag, std::unique_ptr<lcf::rpg::Map> & map, int show_background, int show_lowertiles, int show_uppertiles, int show_events) {
 	SDL_Surface* chipset_img = LoadImage(chipset.c_str(), true);
 
 	stChipset gen;
@@ -191,7 +191,7 @@ void RenderCore(SDL_Surface* output_img, std::string chipset, uint8_t * csflag, 
 		DrawEvents(output_img, &gen, map, 2);
 }
 
-bool MapEventYSort(const RPG::Event& ev1, const RPG::Event& ev2) {
+bool MapEventYSort(const lcf::rpg::Event& ev1, const lcf::rpg::Event& ev2) {
 	return ev1.y < ev2.y;
 }
 
@@ -253,11 +253,11 @@ int main(int argc, char** argv) {
 	path = GetFileDirectory(input);
 
 	if (encoding.empty())
-		encoding = ReaderUtil::GetEncoding(path + "RPG_RT.ini");
+		encoding = lcf::ReaderUtil::GetEncoding(path + "RPG_RT.ini");
 
-	std::unique_ptr<RPG::Map> map(LMU_Reader::Load(input, encoding));
+	std::unique_ptr<lcf::rpg::Map> map(lcf::LMU_Reader::Load(input, encoding));
 	if (!map) {
-		std::cout << LcfReader::GetError() << std::endl;
+		std::cout << lcf::LcfReader::GetError() << std::endl;
 		exit(EXIT_FAILURE);
 	}
 
@@ -270,13 +270,13 @@ int main(int argc, char** argv) {
 		if (database.empty())
 			database = path + "RPG_RT.ldb";
 
-		if (!LDB_Reader::Load(database, encoding)) {
-			std::cout << LcfReader::GetError() << std::endl;
+		if (!lcf::LDB_Reader::Load(database, encoding)) {
+			std::cout << lcf::LcfReader::GetError() << std::endl;
 			exit(EXIT_FAILURE);
 		}
 
-		assert(map->chipset_id <= (int)Data::chipsets.size());
-		RPG::Chipset & cs = Data::chipsets[map->chipset_id - 1];
+		assert(map->chipset_id <= (int)lcf::Data::chipsets.size());
+		lcf::rpg::Chipset & cs = lcf::Data::chipsets[map->chipset_id - 1];
 		std::string chipset_base(cs.chipset_name);
 
 		chipset = FindResource("ChipSet", chipset_base);

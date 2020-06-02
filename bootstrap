@@ -4,7 +4,7 @@
 aclocal && automake --foreign --add-missing && autoconf
 
 # subprojects
-for project in lcf2xml lmu2png png2xyz xyz2png xyzcrush gencache
+for project in lmu2png png2xyz xyz2png xyzcrush gencache
 do
 	echo "=== bootstrapping in $project"
 	`cd $project && ./bootstrap`

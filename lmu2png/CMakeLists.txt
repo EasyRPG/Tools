@@ -16,7 +16,7 @@ add_executable(lmu2png
 
 target_link_libraries(lmu2png ZLIB::ZLIB SDL2::IMAGE liblcf::liblcf)
 
-target_compile_features(lmu2png PRIVATE cxx_std_11)
+target_compile_features(lmu2png PRIVATE cxx_std_14)
 
 include(GNUInstallDirs)
 install(TARGETS lmu2png RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

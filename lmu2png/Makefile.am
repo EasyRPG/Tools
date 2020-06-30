@@ -6,7 +6,7 @@ lmu2png_SOURCES = \
 	src/sdlxyz.h \
 	src/chipset.h
 lmu2png_CXXFLAGS = \
-	-std=c++11 \
+	-std=c++14 \
 	$(LCF_CFLAGS) \
 	$(SDL2_IMAGE_CFLAGS) \
 	$(ZLIB_CFLAGS)

@@ -137,7 +137,8 @@ void DrawEvents(SDL_Surface* output_img, stChipset * gen, std::unique_ptr<lcf::r
 		if (evp->character_name.empty())
 			gen->RenderTile(output_img, (ev.x)*16, (ev.y)*16, 0x2710 + evp->character_index, 0);
 		else {
-			std::string charset(FindResource("CharSet", evp->character_name));
+			std::string cname = lcf::ToString(evp->character_name);
+			std::string charset(FindResource("CharSet", cname));
 			if (charset.empty()) {
 				std::cout << "Can't find charset " << evp->character_name << std::endl;
 				continue;
@@ -160,7 +161,8 @@ void RenderCore(SDL_Surface* output_img, std::string chipset, uint8_t * csflag, 
 
 	// Draw parallax background
 	if (show_background && !map->parallax_name.empty()) {
-		std::string background(FindResource("Panorama", map->parallax_name));
+		std::string pname = lcf::ToString(map->parallax_name);
+		std::string background(FindResource("Panorama", pname));
 		if (background.empty()) {
 			std::cout << "Can't find parallax background " << map->parallax_name << std::endl;
 		} else {

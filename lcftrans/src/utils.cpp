@@ -7,7 +7,7 @@
 #include "utils.h"
 
 #include <algorithm>
-#include <regex>
+#include <sstream>
 
 std::string Utils::GetFilename(const std::string& str) {
 	std::string s = str;
@@ -103,15 +103,19 @@ std::vector<std::string> Utils::GetChoices(const std::vector<lcf::rpg::EventComm
 }
 
 std::string Utils::Escape(const std::string& str) {
-	static std::regex quotation(R"raw(("))raw");
-	static std::regex backslash(R"raw((\\))raw");
+	std::stringstream s;
+	for (char c : str) {
+		switch (c) {
+			case '"':
+				s << "\\\"";
+				break;
+			case '\\':
+				s << "\\\\";
+				break;
+			default:
+				s << c;
+		}
+	}
 
-	return std::regex_replace(std::regex_replace(str, backslash, "\\$1"), quotation, "\\$1");
-}
-
-std::string Utils::Unescape(const std::string& str) {
-	static std::regex quotation(R"raw((""))raw");
-	static std::regex backslash(R"raw((\\\\))raw");
-
-	return std::regex_replace(std::regex_replace(str, backslash, "\"$1"), quotation, "\\$1");
+	return s.str();
 }

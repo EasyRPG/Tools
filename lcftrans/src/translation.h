@@ -27,6 +27,8 @@ public:
 
 	const std::vector<Entry>& getEntries() const;
 
+	Translation Merge(const Translation& from);
+
 	static TranslationLdb fromLDB(const std::string& filename, const std::string& encoding);
 	static Translation fromLMT(const std::string& filename, const std::string& encoding);
 	static Translation fromLMU(const std::string& filename, const std::string& encoding);

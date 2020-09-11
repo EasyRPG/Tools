@@ -92,6 +92,33 @@ const std::vector<Entry>& Translation::getEntries() const {
 	return entries;
 }
 
+Translation Translation::Merge(const Translation& from) {
+	auto efrom = from.getEntries();
+
+	// Ignore strings that don't have a translation at all
+	efrom.erase(
+		std::remove_if(efrom.begin(), efrom.end(), [](Entry& e) { return e.translation.empty(); }),
+	efrom.end());
+
+	// Copy over and find stale entries (entries that are not available in the new translation anymore)
+	Translation stale;
+	for (auto& e_from : efrom) {
+		bool found = false;
+		for (auto& e_to : entries) {
+			if (e_from.original == e_to.original) {
+				e_to.translation = e_from.translation;
+				// no dedup when parsing LCF files, don't "continue" here
+				found = true;
+			}
+		}
+		if (!found) {
+			stale.addEntry(e_from);
+		}
+	}
+
+	return stale;
+}
+
 template<typename T, typename U, typename F>
 static void parseEvents(Translation& t, lcf::StringView parent_name, U& root, const F& make_info) {
 	std::vector<std::string> lines;
@@ -292,20 +319,49 @@ static bool starts_with(const std::string& str, const std::string& search) {
 	return str.find(search) == 0;
 }
 
-static std::string extract_string(const std::string& str) {
-	// Extraction of a sub-match
-	std::regex base_regex(R"raw(^.*?"(.*)\n?")raw");
-	std::smatch base_match;
+static std::string extract_string(const std::string& str, int offset) {
+	std::stringstream out;
+	bool slash = false;
+	bool first_quote = false;
 
-	if (std::regex_match(str, base_match, base_regex)) {
-		if (base_match.size() == 2) {
-			std::ssub_match base_sub_match = base_match[1];
-			std::string base = base_sub_match.str();
-			return Utils::Unescape(base);
+	for (char c : str.substr(offset)) {
+		if (c == ' ' && !first_quote) {
+			continue;
+		} else if (c == '"' && !first_quote) {
+			first_quote = true;
+			continue;
+		}
+
+		if (!slash && c == '\\') {
+			slash = true;
+		} else if (slash) {
+			slash = false;
+			switch (c) {
+				case '\\':
+					out << c;
+					break;
+				case 'n':
+					out << '\n';
+					break;
+				case '"':
+					out << '"';
+					break;
+				default:
+					std::cerr << "Parse error " << str << " (" << c << ")\n";
+					break;
+			}
+		} else {
+			// no-slash
+			if (c == '"') {
+				// done
+				return out.str();
+			}
+			out << c;
 		}
 	}
 
-	return "";
+	std::cerr << "Parse error: Unterminated line" << str << "\n";
+	return out.str();
 }
 
 Translation Translation::fromPO(const std::string& filename) {
@@ -332,7 +388,7 @@ Translation Translation::fromPO(const std::string& filename) {
 
 		if (!parse_item) {
 			if (starts_with(line, "msgctxt")) {
-				e.context = extract_string(line);
+				e.context = extract_string(line, 7);
 
 				parse_item = true;
 			} else if (starts_with(line, "msgid")) {
@@ -344,24 +400,24 @@ Translation Translation::fromPO(const std::string& filename) {
 			if (starts_with(line, "msgid")) {
 			read_msgid:;
 				// Parse multiply lines until empty line or msgstr is encountered
-				e.original = extract_string(line);
+				e.original = extract_string(line, 5);
 
 				while (std::getline(in, line, '\n')) {
 					if (line.empty() || starts_with(line, "msgstr")) {
 						goto read_msgstr;
 					}
-					e.original += "\n" + extract_string(line);
+					e.original += extract_string(line, 0);
 				}
 			} else if (starts_with(line, "msgstr")) {
 			read_msgstr:;
 				// Parse multiply lines until empty line or comment
-				e.translation = extract_string(line);
+				e.translation = extract_string(line, 6);
 
 				while (std::getline(in, line, '\n')) {
 					if (line.empty() || starts_with(line, "#")) {
 						break;
 					}
-					e.translation += "\n" + extract_string(line);
+					e.translation += extract_string(line, 0);
 				}
 
 				parse_item = false;

@@ -21,7 +21,6 @@ namespace Utils {
 	std::vector<std::string> GetChoices(const std::vector<lcf::rpg::EventCommand>& list, int start_index);
 
 	std::string Escape(const std::string& str);
-	std::string Unescape(const std::string& str);
 }
 
 #endif

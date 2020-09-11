@@ -82,9 +82,9 @@ std::vector<std::string> Utils::GetChoices(const std::vector<lcf::rpg::EventComm
 	using Cmd = lcf::rpg::EventCommand::Code;
 	constexpr int max_num_choices = 4;
 
-	int current_indent = list[start_index + 1].indent;
+	int current_indent = list[start_index].indent;
 	std::vector<std::string> s_choices;
-	for (int index_temp = start_index + 1; index_temp < static_cast<int>(list.size()); ++index_temp) {
+	for (int index_temp = start_index; index_temp < static_cast<int>(list.size()); ++index_temp) {
 		const auto& com = list[index_temp];
 		if (com.indent != current_indent) {
 			continue;

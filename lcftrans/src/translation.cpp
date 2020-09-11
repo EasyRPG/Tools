@@ -152,8 +152,6 @@ static void parseEvents(Translation& t, lcf::StringView parent_name, U& root, co
 				lines.push_back(Utils::RemoveControlChars(evt.string));
 				break;
 			case Cmd::ShowChoice: {
-				int current_indent = evt.indent;
-
 				const auto &pevt = *reinterpret_cast<T*>(ctx.parent->obj);
 				auto choices = Utils::GetChoices(pevt.event_commands, line);
 				if (choices.size() + lines.size() > lines_per_message) {
@@ -166,7 +164,7 @@ static void parseEvents(Translation& t, lcf::StringView parent_name, U& root, co
 					lines = choices;
 				} else {
 					// The choice is on the same page as the current message
-					info.push_back("Choice at line " + std::to_string(lines.size()) + "(" + std::to_string(choices.size()) + " options)");
+					info.push_back("Choice starting at line " + std::to_string(lines.size() + 1) + " (" + std::to_string(choices.size()) + " options)");
 					lines.insert(lines.end(), choices.begin(), choices.end());
 				}
 				add_evt_entry();

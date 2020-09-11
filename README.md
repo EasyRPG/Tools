@@ -35,9 +35,9 @@ These are the currently available tools:
 
    Syntax: `gencache [Options] [Directory]`
 
- * LcfTrans: extracts text out of LDB and LMU files and creates po files.
+ * LcfTrans: extracts text out of LDB, LMT and LMU files and creates po files.
 
-   Syntax: `lcftrans`
+   Syntax: `lcftrans [Options] Directory [Encoding]`
 
  * LCFVIZ: Parses the map tree and creates a GraphViz (dot) graph.
 

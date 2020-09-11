@@ -152,7 +152,9 @@ void DumpLdb(const std::string& filename) {
 				pot = Translation::fromPO(outdir + "/" + po);
 				auto stale = ti.Merge(pot);
 				if (!stale.getEntries().empty()) {
-					std::cout << " " << stale.getEntries().size() << " strings are stale\n";
+					std::string term = stale.getEntries().size() == 1 ? " term is " : " terms are ";
+
+					std::cout << " " << stale.getEntries().size() << term << "stale\n";
 					std::ofstream outfile(outdir + "/" + poname + ".stale.po");
 					stale.write(outfile);
 				}
@@ -163,25 +165,29 @@ void DumpLdb(const std::string& filename) {
 		ti.write(outfile);
 	};
 
-	std::cout << " " << t.terms.getEntries().size() << " strings\n";
+	auto term = [](const Translation& t) {
+		return std::to_string(t.getEntries().size()) + " " + (t.getEntries().size() == 1 ? "term " : "terms ");
+	};
+
+	std::cout << " " << term(t.terms) << "in the database\n";
 	dump(t.terms, "RPG_RT.ldb");
 
-	std::cout << " " << t.common_events.getEntries().size() << " strings in Common Events\n";
+	std::cout << " " << term(t.common_events) << "in Common Events\n";
 	dump(t.common_events, "RPG_RT.ldb.common");
 
-	std::cout << " " << t.battle_events.getEntries().size() << " strings in Battle Events\n";
-	dump(t.terms, "RPG_RT.ldb.battle");
+	std::cout << " " << term(t.battle_events) << "in Battle Events\n";
+	dump(t.battle_events, "RPG_RT.ldb.battle");
 }
 
 void DumpLmuLmtInner(const std::string& filename, Translation& t, const std::string& poname) {
 	Translation pot;
 
 	if (t.getEntries().empty()) {
-		std::cout << " Skipped... No strings found.\n";
+		std::cout << " Skipped. No terms found.\n";
 		return;
 	}
 
-	std::cout << " " << t.getEntries().size() << " strings\n";
+	std::cout << " " << t.getEntries().size() << " term" << (t.getEntries().size() == 1 ? "" : "s") << "\n";
 
 	if (update) {
 		std::string po = get_outdir_file(Utils::LowerCase(poname + ".po"));
@@ -193,7 +199,8 @@ void DumpLmuLmtInner(const std::string& filename, Translation& t, const std::str
 			pot = Translation::fromPO(outdir + "/" + po);
 			auto stale = t.Merge(pot);
 			if (!stale.getEntries().empty()) {
-				std::cout << " " << stale.getEntries().size() << " strings are stale\n";
+				std::string term = stale.getEntries().size() == 1 ? " term is " : " terms are ";
+				std::cout << " " << stale.getEntries().size() << term << "stale\n";
 				std::ofstream outfile(outdir + "/" + poname + ".stale.po");
 				stale.write(outfile);
 			}

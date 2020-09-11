@@ -20,6 +20,10 @@ if ENABLE_GENCACHE
 SUBDIRS += gencache
 endif
 
+if ENABLE_LCFTRANS
+SUBDIRS += lcftrans
+endif
+
 if ENABLE_LCFVIZ
 SUBDIRS += lcfviz
 endif

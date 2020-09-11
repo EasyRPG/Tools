@@ -44,6 +44,10 @@ bool Utils::HasExt(const std::string& path, const std::string& ext) {
 }
 
 std::string Utils::Join(const std::vector<std::string>& lines, char join_char) {
+	if (lines.empty()) {
+		return "";
+	}
+
 	std::string ret;
 	for (const std::string& s : lines) {
 		ret += s + join_char;

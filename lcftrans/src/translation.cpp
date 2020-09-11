@@ -61,18 +61,22 @@ void Translation::writeEntries(std::ostream& out) {
 
 	for (std::string& s : order) {
 		for (Entry* e : items[s]) {
+			if (!e->location.empty()) {
+				out << "#: " << e->location << "\n";
+			}
+
 			if (!e->info.empty()) {
 				std::stringstream ss(e->info);
 
 				std::string info;
 				while (std::getline(ss, info, '\n')) {
-					out << "#. " << info << std::endl;
+					out << "#. " << info << "\n";
 				}
 			}
 		}
 		items[s][0]->write(out);
 
-		out << std::endl;
+		out << "\n";
 	}
 }
 
@@ -88,22 +92,26 @@ const std::vector<Entry>& Translation::getEntries() const {
 	return entries;
 }
 
-template<typename T, typename U>
-static void parseEvents(Translation& t, lcf::StringView parent_name, U& root) {
+template<typename T, typename U, typename F>
+static void parseEvents(Translation& t, lcf::StringView parent_name, U& root, const F& make_info) {
 	std::vector<std::string> lines;
+	std::vector<std::string> info;
 	int prev_evt_id = 0;
 	int prev_line = 0;
 	int prev_indent = 0;
 
 	auto add_evt_entry = [&]() {
 		if (lines.empty()) {
+			info.clear();
 			return;
 		}
 
 		Entry e;
 		e.original = Utils::Join(lines);
+		e.info = Utils::Join(info);
 		t.addEntry(e);
 		lines.clear();
+		info.clear();
 	};
 
 	// Read common events
@@ -117,7 +125,7 @@ static void parseEvents(Translation& t, lcf::StringView parent_name, U& root) {
 			return;
 		}
 
-		const auto &evt = *reinterpret_cast<lcf::rpg::EventCommand *>(ctx.obj);
+		const auto &evt = *reinterpret_cast<lcf::rpg::EventCommand*>(ctx.obj);
 
 		int evt_id = ctx.parent->parent->index + 1;
 		int line = ctx.parent->index + 1;
@@ -131,15 +139,14 @@ static void parseEvents(Translation& t, lcf::StringView parent_name, U& root) {
 				// New message, push old one
 				add_evt_entry();
 
-				//e.info = "Common Event " + std::to_string(ctx.parent->parent->index + 1) + ", Line " + std::to_string(ctx.parent->index + 1);
+				info.push_back(make_info(ctx));
 				lines.push_back(Utils::RemoveControlChars(evt.string));
 				break;
 			case Cmd::ShowMessage_2:
 				// Next message line
 				if (lines.empty()) {
 					// shouldn't happen
-					std::cerr << "Corrupted event (Message continuation without Message start) " << evt_id << "@"
-							  << line << "\n";
+					std::cerr << "Corrupted event (Message continuation without Message start) " << evt_id << "@" << line << "\n";
 				}
 
 				lines.push_back(Utils::RemoveControlChars(evt.string));
@@ -151,10 +158,15 @@ static void parseEvents(Translation& t, lcf::StringView parent_name, U& root) {
 				auto choices = Utils::GetChoices(pevt.event_commands, line);
 				if (choices.size() + lines.size() > lines_per_message) {
 					// The choice will be on a new page -> create two entries
+					// Event, Page, Line
 					add_evt_entry();
+
+					info.push_back(make_info(ctx));
+					info.push_back("Choice (" + std::to_string(choices.size()) + " options)");
 					lines = choices;
 				} else {
 					// The choice is on the same page as the current message
+					info.push_back("Choice at line " + std::to_string(lines.size()) + "(" + std::to_string(choices.size()) + " options)");
 					lines.insert(lines.end(), choices.begin(), choices.end());
 				}
 				add_evt_entry();
@@ -195,7 +207,7 @@ TranslationLdb Translation::fromLDB(const std::string& filename, const std::stri
 		}
 
 		if (!ctx.value->empty()) {
-			lcf::StringView pname = ctx.parent->name;
+			lcf::StringView pname = lcf::ToString(ctx.parent->name);
 			lcf::StringView name = ctx.name;
 
 			if (std::find(chunks.begin(), chunks.end(), pname) == chunks.end()) {
@@ -214,14 +226,25 @@ TranslationLdb Translation::fromLDB(const std::string& filename, const std::stri
 
 			Entry e;
 			e.original = lcf::ToString(*ctx.value);
-			e.context = lcf::ToString(ctx.parent->name) + "." + lcf::ToString(ctx.name);
-			// e.info
+			e.context = lcf::ToString(pname) + "." + lcf::ToString(name);
+			if (ctx.parent->index > -1) {
+				e.info = "ID " + std::to_string(ctx.parent->index + 1);
+			}
 			t.terms.addEntry(e);
 		}
 	});
 
-	parseEvents<lcf::rpg::CommonEvent>(t.common_events, "commonevents", lcf::Data::data);
-	parseEvents<lcf::rpg::TroopPage>(t.battle_events, "pages", lcf::Data::data);
+	parseEvents<lcf::rpg::CommonEvent>(t.common_events, "commonevents", lcf::Data::data, [](lcf::Context<lcf::DBString>& ctx) {
+		std::string id = "ID " + std::to_string(ctx.parent->parent->index + 1);
+		std::string line = "Line " + std::to_string(ctx.parent->index + 1);
+		return id + ", " + line;
+	});
+	parseEvents<lcf::rpg::TroopPage>(t.battle_events, "pages", lcf::Data::data, [](lcf::Context<lcf::DBString>& ctx) {
+		std::string id = "ID " + std::to_string(ctx.parent->parent->parent->index + 1);
+		std::string page = "Page " + std::to_string(ctx.parent->parent->index + 1);
+		std::string line = "Line " + std::to_string(ctx.parent->index + 1);
+		return id + ", " + page + ", " + line;
+	});
 
 	return t;
 }
@@ -243,6 +266,7 @@ Translation Translation::fromLMT(const std::string &filename, const std::string 
 		if (info.type == lcf::rpg::TreeMap::MapType_map) {
 			Entry e;
 			e.original = lcf::ToString(*ctx.value);
+			e.info = "ID " + std::to_string(ctx.parent->index + 1);
 			t.addEntry(e);
 		}
 	});
@@ -254,7 +278,15 @@ Translation Translation::fromLMU(const std::string& filename, const std::string&
 	lcf::rpg::Map map = *lcf::LMU_Reader::Load(filename, encoding);
 
 	Translation t;
-	parseEvents<lcf::rpg::EventPage>(t, "pages", map);
+	parseEvents<lcf::rpg::EventPage>(t, "pages", map, [](lcf::Context<lcf::DBString>& ctx) {
+		auto* event = reinterpret_cast<lcf::rpg::Event*>(ctx.parent->parent->obj);
+		std::string id = "ID " + std::to_string(event->ID);
+		std::string page = "Page " + std::to_string(ctx.parent->parent->index + 1);
+		std::string line = "Line " + std::to_string(ctx.parent->index + 1);
+		std::string pos = "Pos (" + std::to_string(event->x) + "," + std::to_string(event->y) + ")";
+
+		return id + ", " + page + ", " + line + ", " + pos;
+	});
 	return t;
 }
 

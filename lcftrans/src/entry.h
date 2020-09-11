@@ -15,6 +15,7 @@ public:
 	std::string translation; // msgstr
 	std::string context; // msgctxt
 	std::string info; // #.
+	std::string location; // #: // Unused, maybe useful later
 
 	void write(std::ostream& out) const;
 };

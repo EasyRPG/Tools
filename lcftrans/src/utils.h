@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 #include <lcf/rpg/eventcommand.h>
+#include <lcf/span.h>
 
 namespace Utils {
 	std::string GetFilename(const std::string& str);
@@ -18,7 +19,7 @@ namespace Utils {
 	std::string LowerCase(const std::string &in);
 	std::string RemoveControlChars(lcf::StringView s);
 
-	std::vector<std::string> GetChoices(const std::vector<lcf::rpg::EventCommand>& list, int start_index);
+	std::vector<std::string> GetChoices(lcf::Span<lcf::rpg::EventCommand> list, int start_index);
 
 	std::string Escape(const std::string& str);
 }

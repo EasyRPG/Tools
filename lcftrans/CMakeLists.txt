@@ -14,6 +14,7 @@ add_executable(lcftrans
 	src/main.cpp
 	src/translation.cpp
 	src/translation.h
+	src/types.h
 	src/utils.cpp
 	src/utils.h
 )

@@ -78,7 +78,7 @@ std::string Utils::RemoveControlChars(lcf::StringView s) {
 	return out;
 }
 
-std::vector<std::string> Utils::GetChoices(const std::vector<lcf::rpg::EventCommand>& list, int start_index) {
+std::vector<std::string> Utils::GetChoices(lcf::Span<lcf::rpg::EventCommand> list, int start_index) {
 	using Cmd = lcf::rpg::EventCommand::Code;
 	constexpr int max_num_choices = 4;
 

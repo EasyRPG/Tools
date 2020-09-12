@@ -8,8 +8,9 @@ lcftrans_SOURCES = \
 	src/translation.h \
 	src/types.h \
 	src/utils.cpp \
-    src/utils.h
+	src/utils.h
 lcftrans_CXXFLAGS = \
+	-std=c++14 \
 	$(LCF_CFLAGS)
 lcftrans_LDADD = \
 	$(LCF_LIBS)

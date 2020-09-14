@@ -359,58 +359,9 @@ Translation Translation::fromLMU(const std::string& filename, const std::string&
 	return t;
 }
 
-static bool starts_with(const std::string& str, const std::string& search) {
-	return str.find(search) == 0;
-}
-
-static std::string extract_string(const std::string& str, int offset) {
-	std::stringstream out;
-	bool slash = false;
-	bool first_quote = false;
-
-	for (char c : str.substr(offset)) {
-		if (c == ' ' && !first_quote) {
-			continue;
-		} else if (c == '"' && !first_quote) {
-			first_quote = true;
-			continue;
-		}
-
-		if (!slash && c == '\\') {
-			slash = true;
-		} else if (slash) {
-			slash = false;
-			switch (c) {
-				case '\\':
-					out << c;
-					break;
-				case 'n':
-					out << '\n';
-					break;
-				case '"':
-					out << '"';
-					break;
-				default:
-					std::cerr << "Parse error " << str << " (" << c << ")\n";
-					break;
-			}
-		} else {
-			// no-slash
-			if (c == '"') {
-				// done
-				return out.str();
-			}
-			out << c;
-		}
-	}
-
-	std::cerr << "Parse error: Unterminated line" << str << "\n";
-	return out.str();
-}
-
 Translation Translation::fromPO(const std::string& filename) {
 	// Super simple parser.
-	// Ignores header and comments but good enough for use in liblcf later...
+	// Only parses msgstr, msgid and msgctx
 	
 	Translation t;
 
@@ -422,50 +373,105 @@ Translation Translation::fromPO(const std::string& filename) {
 
 	Entry e;
 
+	auto starts_with = [&line](const std::string& search) {
+		return line.find(search) == 0;
+	};
+
+	auto extract_string = [&line](int offset) {
+		std::stringstream out;
+		bool slash = false;
+		bool first_quote = false;
+
+		for (char c : line.substr(offset)) {
+			if (c == ' ' && !first_quote) {
+				continue;
+			} else if (c == '"' && !first_quote) {
+				first_quote = true;
+				continue;
+			}
+
+			if (!slash && c == '\\') {
+				slash = true;
+			} else if (slash) {
+				slash = false;
+				switch (c) {
+					case '\\':
+						out << c;
+						break;
+					case 'n':
+						out << '\n';
+						break;
+					case '"':
+						out << '"';
+						break;
+					default:
+						std::cerr << "Parse error " << line << " (" << c << ")\n";
+						break;
+				}
+			} else {
+				// no-slash
+				if (c == '"') {
+					// done
+					return out.str();
+				}
+				out << c;
+			}
+		}
+
+		std::cerr << "Parse error: Unterminated line" << line << "\n";
+		return out.str();
+	};
+
+	auto read_msgstr = [&]() {
+		// Parse multiply lines until empty line or comment
+		e.translation = extract_string(6);
+
+		while (std::getline(in, line, '\n')) {
+			if (line.empty() || starts_with("#")) {
+				break;
+			}
+			e.translation += extract_string(0);
+		}
+
+		parse_item = false;
+		t.addEntry(e);
+	};
+
+	auto read_msgid = [&]() {
+		// Parse multiply lines until empty line or msgstr is encountered
+		e.original = extract_string(5);
+
+		while (std::getline(in, line, '\n')) {
+			if (line.empty() || starts_with("msgstr")) {
+				read_msgstr();
+				return;
+			}
+			e.original += extract_string(0);
+		}
+	};
+
 	while (std::getline(in, line, '\n')) {
 		if (!found_header) {
-			if (starts_with(line, "msgstr")) {
+			if (starts_with("msgstr")) {
 				found_header = true;
 			}
 			continue;
 		}
 
 		if (!parse_item) {
-			if (starts_with(line, "msgctxt")) {
-				e.context = extract_string(line, 7);
+			if (starts_with("msgctxt")) {
+				e.context = extract_string(7);
 
 				parse_item = true;
-			} else if (starts_with(line, "msgid")) {
+			} else if (starts_with("msgid")) {
 				parse_item = true;
-
-				goto read_msgid;
+				read_msgid();
 			}
 		} else {
-			if (starts_with(line, "msgid")) {
-			read_msgid:;
-				// Parse multiply lines until empty line or msgstr is encountered
-				e.original = extract_string(line, 5);
-
-				while (std::getline(in, line, '\n')) {
-					if (line.empty() || starts_with(line, "msgstr")) {
-						goto read_msgstr;
-					}
-					e.original += extract_string(line, 0);
-				}
-			} else if (starts_with(line, "msgstr")) {
-			read_msgstr:;
-				// Parse multiply lines until empty line or comment
-				e.translation = extract_string(line, 6);
-
-				while (std::getline(in, line, '\n')) {
-					if (line.empty() || starts_with(line, "#")) {
-						break;
-					}
-					e.translation += extract_string(line, 0);
-				}
-
-				parse_item = false;
-				t.addEntry(e);
+			if (starts_with("msgid")) {
+				read_msgid();
+			} else if (starts_with("msgstr")) {
+				read_msgstr();
 			}
 		}
 	}

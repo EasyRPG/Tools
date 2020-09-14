@@ -7,6 +7,8 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <lcf/encoder.h>
+#include <lcf/reader_util.h>
 
 #include "translation.h"
 #include "utils.h"
@@ -35,12 +37,17 @@ static int print_help(char** argv) {
 	std::cerr << "Optional options:\n";
 	std::cerr << "  -h, --help    This usage message\n";
 	std::cerr << "  -o, --output  Output directory (default: working directory)\n";
+	std::cerr << "\n";
+	std::cerr << "When not specified the encoding is read from RPG_RT.ini or auto-detected.\n";
 	return 2;
 }
 
 std::string encoding;
 std::string outdir = ".";
+std::vector<std::pair<std::string, std::string>> source_files;
 std::vector<std::pair<std::string, std::string>> outdir_files;
+std::string ini_file;
+std::string database_file;
 bool update = false;
 
 int main(int argc, char** argv) {
@@ -85,6 +92,10 @@ int main(int argc, char** argv) {
 		return print_help(argv);
 	}
 
+	auto full_path = [&](const auto& name) {
+		return indir + "/" + name;
+	};
+
 	DIR *dirHandle;
 	struct dirent* dirEntry;
 
@@ -98,35 +109,64 @@ int main(int argc, char** argv) {
 			outdir_files.emplace_back(dirEntry->d_name, Utils::LowerCase(dirEntry->d_name));
 		}
 	}
-
 	closedir(dirHandle);
 
 	dirHandle = opendir(indir.c_str());
-
 	if (dirHandle) {
 		while (nullptr != (dirEntry = readdir(dirHandle))) {
-			std::string name = dirEntry->d_name;
-			std::string lname = Utils::LowerCase(name);
+			const auto& lname = Utils::LowerCase(dirEntry->d_name);
+			source_files.emplace_back(dirEntry->d_name, lname);
 
-			auto full_path = [&]() {
-				return indir + "/" + name;
-			};
-
-			if (lname == DATABASE_FILE) {
-				std::cout << "Parsing Database " << name << std::endl;
-				DumpLdb(full_path());
-			} else if (lname == MAPTREE_FILE) {
-				std::cout << "Parsing Maptree " << name << std::endl;
-				DumpLmt(full_path());
-			} else if (Utils::HasExt(lname, ".lmu")) {
-				std::cout << "Parsing Map " << name << std::endl;
-				DumpLmu(full_path());
+			if (lname == INI_FILE) {
+				ini_file = full_path(dirEntry->d_name);
+			} else if (lname == DATABASE_FILE) {
+				database_file = full_path(dirEntry->d_name);
 			}
 		}
 		closedir(dirHandle);
 	} else {
 		std::cerr << "Failed reading dir " << indir << "\n";
 		return 1;
+	}
+
+	if (encoding.empty()) {
+		if (!ini_file.empty()) {
+			encoding = lcf::ReaderUtil::GetEncoding(ini_file);
+		}
+		if (encoding.empty() && !database_file.empty()) {
+			std::ifstream i(database_file, std::ios::binary);
+			if (i) {
+				encoding = lcf::ReaderUtil::DetectEncoding(i);
+			}
+		}
+	}
+
+	lcf::Encoder enc(encoding);
+	if (!enc.IsOk()) {
+		std::cerr << "Bad encoding " << encoding << "\n";
+		return 3;
+	}
+	std::cout << "LcfTrans\n";
+	std::cout << "Using encoding " << encoding << "\n";
+
+	std::sort(source_files.begin(), source_files.end(), [](const auto& a, const auto& b) {
+		return a.first < b.first;
+	});
+
+	for (const auto& s : source_files) {
+		const auto& name = s.first;
+		const auto& lname = s.second;
+
+		if (lname == DATABASE_FILE) {
+			std::cout << "Parsing Database " << name << std::endl;
+			DumpLdb(full_path(name));
+		} else if (lname == MAPTREE_FILE) {
+			std::cout << "Parsing Maptree " << name << std::endl;
+			DumpLmt(full_path(name));
+		} else if (Utils::HasExt(lname, ".lmu")) {
+			std::cout << "Parsing Map " << name << std::endl;
+			DumpLmu(full_path(name));
+		}
 	}
 
 	return 0;

@@ -7,8 +7,11 @@
 // Important:
 // Do not write diagnostics to stdout (dot file output uses it), always use stderr
 
+#include <algorithm>
+#include <climits>
 #include <cstring>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <unordered_map>
 #include <lcf/encoder.h>
@@ -35,7 +38,7 @@
 void ParseLmt(const std::string& filename);
 
 static int print_help(char** argv) {
-	std::cerr << "lcfdot - Creates a dot file from a map tree by scanning the map for teleports.\n";
+	std::cerr << "lcfviz - Creates a dot file from a map tree by scanning the map for teleports.\n";
 	std::cerr << "Usage: " << argv[0] << " [OPTION...] DIRECTORY [ENCODING]\n";
 	std::cerr << "Options:\n";
 	std::cerr << "  -d, --depth DEPTH  Maximal depth from the start node (default: no limit)\n";
@@ -48,7 +51,7 @@ static int print_help(char** argv) {
 	std::cerr << "When not specified the encoding is read from RPG_RT.ini or auto-detected.\n";
 	std::cerr << "\n";
 	std::cerr << "Example usage:\n";
-	std::cerr << " lcfdot YOURGAME | dot -Goverlap=false -Gsplines=true -Tpng -o graph.png\n";
+	std::cerr << " lcfviz YOURGAME | dot -Goverlap=false -Gsplines=true -Tpng -o graph.png\n";
 	std::cerr << "Creates an overlap-free, directed graph (for huge graphs use sfdp, not dot)\n";
 	return 2;
 }
@@ -163,6 +166,7 @@ int main(int argc, char** argv) {
 		return a.first < b.first;
 	});
 
+	bool parsed_lmt = false;
 	// Only process maps that are part of the map tree
 	for (const auto& s : source_files) {
 		const auto& name = s.first;
@@ -171,7 +175,13 @@ int main(int argc, char** argv) {
 		if (lname == MAPTREE_FILE) {
 			std::cerr << "Parsing Maptree " << name << std::endl;
 			ParseLmt(full_path(name));
+			parsed_lmt = true;
 		}
+	}
+
+	if (!parsed_lmt) {
+		std::cerr << "Map Tree (RPG_RT.lmt) not found in " << indir << "\n";
+		return 1;
 	}
 
 	std::stable_sort(targets_per_map.begin(), targets_per_map.end(), [](const auto& a, const auto& b) {
@@ -183,17 +193,26 @@ int main(int argc, char** argv) {
 	targets_per_map.erase(std::unique(targets_per_map.begin(), targets_per_map.end()), targets_per_map.end());
 
 	// Detect nodes that are unreachable from the start map
-	std::vector<int> visited;
+	// Pair of: map ID, highest depth seen
+	std::vector<std::pair<int,int>> visited;
 	depth_limit = depth_limit < 0 ? INT_MAX : depth_limit;
 	std::function<void(int,int)> depth_search;
 	depth_search = [&](int cur_node, int cur_depth) {
-		auto v_it = std::find(visited.begin(), visited.end(), cur_node);
-		if (v_it != visited.end()) {
+		auto v_it = std::find_if(visited.begin(), visited.end(), [&](const auto &val) {
+			return val.first == cur_node;
+		});
+		if (cur_depth > depth_limit) {
 			return;
 		}
-		visited.push_back(cur_node);
-		if (cur_depth >= depth_limit) {
-			return;
+		if (v_it == visited.end()) {
+			visited.emplace_back(cur_node, cur_depth);
+		} else {
+			if (v_it->second < cur_depth) {
+				// node was already seen on a lower level -> abort
+				return;
+			} else {
+				v_it->second = cur_depth;
+			}
 		}
 
 		auto it = std::find_if(targets_per_map.begin(), targets_per_map.end(), [&](const auto& val) {
@@ -211,7 +230,9 @@ int main(int argc, char** argv) {
 
 	// Output all nodes (if reachable)
 	for (const auto& map : maps) {
-		if (remove_unreachable && std::find(visited.begin(), visited.end(), map.first) == visited.end()){
+		if (remove_unreachable && std::find_if(visited.begin(), visited.end(), [&](const auto& val) {
+			return val.first == map.first;
+		}) == visited.end()){
 			continue;
 		}
 
@@ -226,10 +247,14 @@ int main(int argc, char** argv) {
 	std::vector<std::pair<int, int>> pending_erase;
 	for (const auto& map : targets_per_map) {
 		if (remove_unreachable && (
-				std::find(visited.begin(), visited.end(), map.first) == visited.end() ||
-				std::find(visited.begin(), visited.end(), map.second) == visited.end())
-		) {
-			// Unreachable
+			std::find_if(visited.begin(), visited.end(), [&](const auto& val) {
+				return val.first == map.first;
+			}) == visited.end() ||
+			std::find_if(visited.begin(), visited.end(), [&](const auto& val) {
+				return val.first == map.second;
+			}) == visited.end())
+			) {
+			// Target or source node not in set
 			continue;
 		}
 

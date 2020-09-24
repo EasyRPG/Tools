@@ -34,6 +34,10 @@ These are the currently available tools:
  * GENCACHE: generates a JSON cache file of game directory contents.
 
    Syntax: `gencache [Options] [Directory]`
+   
+ * LCFVIZ: Parses the map tree and creates a GraphViz (dot) graph.
+
+   Syntax: `lcfviz [Options] [Directory]`
 
  * xyz-thumbnailer: displays thumbnails for XYZ files in your file manager
                     (currently Windows and Linux/GTK3/KDE5 only).

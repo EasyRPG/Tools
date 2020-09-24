@@ -15,6 +15,8 @@
 #include <lcf/reader_util.h>
 #include <lcf/lmt/reader.h>
 #include <lcf/lmu/reader.h>
+#include <lcf/data.h>
+#include <lcf/rpg/treemap.h>
 
 #include "utils.h"
 
@@ -46,7 +48,7 @@ static int print_help(char** argv) {
 	std::cerr << "When not specified the encoding is read from RPG_RT.ini or auto-detected.\n";
 	std::cerr << "\n";
 	std::cerr << "Example usage:\n";
-	std::cerr << " lcfdot YOURGAME | dot -Goverlap=false -Gsplines=true -Tpng -o bla.png\n";
+	std::cerr << " lcfdot YOURGAME | dot -Goverlap=false -Gsplines=true -Tpng -o graph.png\n";
 	std::cerr << "Creates an overlap-free, directed graph (for huge graphs use sfdp, not dot)\n";
 	return 2;
 }
@@ -105,7 +107,7 @@ int main(int argc, char** argv) {
 	};
 
 	std::ofstream ofile;
-	std::ostream* out = &*out;
+	std::ostream* out = &std::cout;
 	if (!outfile.empty()) {
 		ofile.open(outfile);
 		if (!ofile) {

@@ -22,7 +22,7 @@ Requirements
 ------------
 
  * ICU
- * nlohmann json (included)
+ * nlohmann json
 
 
 Daily builds

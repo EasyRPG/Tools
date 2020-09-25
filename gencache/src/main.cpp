@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 gencache authors
+ * Copyright (c) 2016-2020 gencache authors
  * This file is released under the ISC License
  * https://opensource.org/licenses/ISC
  */
@@ -18,8 +18,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <ctime>
-
-#include "json.hpp"
+#include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 

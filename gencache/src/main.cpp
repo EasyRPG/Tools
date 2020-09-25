@@ -196,18 +196,22 @@ int main(int argc, const char* argv[]) {
 	json cache = parse_dir_recursive(path, recursion_depth, true);
 
 	std::time_t t = std::time(nullptr);
-	std::string date = "2000-04-05";
+	std::string date = "????-??-??";
 	char datebuf[11];
 	if (std::strftime(datebuf, sizeof(datebuf), "%F", std::localtime(&t)))
 		date = std::string(datebuf);
 
 	/* add metadata */
 	json out = {
-		"metadata", {
-			{ "version", 2 },
-			{ "date", date }
+		{
+			"metadata", {
+				{ "version", 2 },
+				{ "date", date }
+			}
 		},
-		"cache", cache
+		{
+			"cache", cache
+		}
 	};
 
 	/* write to cache file */

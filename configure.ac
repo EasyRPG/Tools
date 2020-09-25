@@ -21,6 +21,7 @@ EASYRPG_TOOL_ENABLE([png2xyz])
 EASYRPG_TOOL_ENABLE([xyz2png])
 EASYRPG_TOOL_ENABLE([xyzcrush])
 EASYRPG_TOOL_ENABLE([gencache])
+EASYRPG_TOOL_ENABLE([lcfviz])
 
 AC_CONFIG_FILES([Makefile])
 
@@ -40,3 +41,4 @@ echo ""
 echo "Other:"
 echo "  xyzcrush: $enable_xyzcrush"
 echo "  gencache: $enable_gencache"
+echo "  lcfviz:   $enable_lcfviz"

@@ -5,3 +5,4 @@ MimeType=image/xyz;
 CacheThumbnail=true
 X-KDE-ServiceTypes=ThumbCreator
 X-KDE-Library=xyzthumbnail
+ThumbnailerVersion=2

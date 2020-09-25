@@ -14,11 +14,11 @@ set "batchPath=%~dp0"
 setlocal EnableDelayedExpansion
 
 :: 64bit check
-IF "%PROCESSOR_ARCHITECTURE%"=="x86" (set bit=x86) else (set bit=amd64)
+IF "%PROCESSOR_ARCHITECTURE%"=="x86" (set bit=x86) else (set bit=x64)
 
 :: Elevate to admin and run regsvr32
 
 ECHO Set UAC = CreateObject^("Shell.Application"^) > "%temp%\xyzgetPrivileges.vbs"
-ECHO UAC.ShellExecute "regsvr32", " /u ""!batchPath!\Release\%bit%\EasyRpgXyzShellExtThumbnailHandler.dll""", "", "runas", 1 >> "%temp%\xyzgetPrivileges.vbs"
+ECHO UAC.ShellExecute "regsvr32", " /u ""!batchPath!\%bit%\EasyRpgXyzShellExtThumbnailHandler.dll""", "", "runas", 1 >> "%temp%\xyzgetPrivileges.vbs"
 "%temp%\xyzgetPrivileges.vbs"
 exit /B

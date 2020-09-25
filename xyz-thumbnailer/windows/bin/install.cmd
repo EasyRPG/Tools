@@ -19,6 +19,6 @@ IF "%PROCESSOR_ARCHITECTURE%"=="x86" (set bit=x86) else (set bit=x64)
 :: Elevate to admin and run regsvr32
 
 ECHO Set UAC = CreateObject^("Shell.Application"^) > "%temp%\xyzgetPrivileges.vbs"
-ECHO UAC.ShellExecute "regsvr32", """!batchPath!\Release\%bit%\EasyRpgXyzShellExtThumbnailHandler.dll""", "", "runas", 1 >> "%temp%\xyzgetPrivileges.vbs"
+ECHO UAC.ShellExecute "regsvr32", """!batchPath!\%bit%\EasyRpgXyzShellExtThumbnailHandler.dll""", "", "runas", 1 >> "%temp%\xyzgetPrivileges.vbs"
 "%temp%\xyzgetPrivileges.vbs"
 exit /B

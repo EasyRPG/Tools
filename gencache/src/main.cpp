@@ -196,7 +196,8 @@ int main(int argc, const char* argv[]) {
 	json cache = parse_dir_recursive(path, recursion_depth, true);
 
 	std::time_t t = std::time(nullptr);
-	std::string date = "????-??-??";
+	// trigraph ?-escapes
+	std::string date = R"(????-??-??)";
 	char datebuf[11];
 	if (std::strftime(datebuf, sizeof(datebuf), "%F", std::localtime(&t)))
 		date = std::string(datebuf);

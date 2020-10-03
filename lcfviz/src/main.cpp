@@ -236,7 +236,7 @@ int main(int argc, char** argv) {
 			continue;
 		}
 
-		*out << " " << map.first << " [label=\"" << map.second << "\"";
+		*out << map.first << " [label=\"" << map.second << "\"";
 		if (start_map_id == map.first) {
 			*out << " shape=box style=filled fillcolor=gray";
 		}

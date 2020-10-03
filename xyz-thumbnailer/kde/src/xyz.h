@@ -1,5 +1,5 @@
 /*
- * This file is part of kde-xyz-thumbnailer. Copyright (c) 2017 kde-xyz-thumbnailer authors.
+ * This file is part of kde-xyz-thumbnailer. Copyright (c) 2020 kde-xyz-thumbnailer authors.
  * https://github.com/EasyRPG/Tools - https://easyrpg.org
  *
  * kde-xyz-thumbnailer is Free/Libre Open Source Software, released under the MIT License.
@@ -16,8 +16,8 @@
 // Required by KDE ThumbCreator
 class XyzThumbnailCreator : public ThumbCreator {
 public:
-	virtual bool create(const QString &path, int width, int height, QImage &img);
-	Flags flags() const;
+	virtual bool create(const QString &path, int width, int height, QImage &img) override;
+	Flags flags() const override;
 };
 
 // Required by QImageIOPlugin
@@ -28,15 +28,15 @@ class XyzImageIOPlugin : public QImageIOPlugin {
 	Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QImageIOHandlerFactoryInterface" FILE "qxyz.json")
 
 public:
-	Capabilities capabilities(QIODevice *device, const QByteArray &format) const;
-	QImageIOHandler* create(QIODevice *device, const QByteArray &format) const;
+	Capabilities capabilities(QIODevice *device, const QByteArray &format) const override;
+	QImageIOHandler* create(QIODevice *device, const QByteArray &format) const override;
 };
 
 class XyzImageIOHandler : public QImageIOHandler {
 public:
-	bool canRead() const;
+	bool canRead() const override;
 	static bool canRead(QIODevice *device);
-	bool read(QImage* image);
+	bool read(QImage* image) override;
 };
 
 // Shared code for creating a XYZ QImage

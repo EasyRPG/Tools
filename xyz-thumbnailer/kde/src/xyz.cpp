@@ -1,5 +1,5 @@
 /*
- * This file is part of kde-xyz-thumbnailer. Copyright (c) 2017 kde-xyz-thumbnailer authors.
+ * This file is part of kde-xyz-thumbnailer. Copyright (c) 2020 kde-xyz-thumbnailer authors.
  * https://github.com/EasyRPG/Tools - https://easyrpg.org
  *
  * kde-xyz-thumbnailer is Free/Libre Open Source Software, released under the MIT License.
@@ -67,15 +67,15 @@ QImageIOHandler* XyzImageIOPlugin::create(QIODevice *device, const QByteArray &f
 
 QImageIOPlugin::Capabilities XyzImageIOPlugin::capabilities(QIODevice *device, const QByteArray &format) const {
 	if (format.isNull() && !device) {
-		return 0;
+		return {};
 	}
 
 	if (!format.isNull() && format.toLower() != "xyz") {
-		return 0;
+		return {};
 	}
 
 	if (device && !XyzImageIOHandler::canRead(device)) {
-		return 0;
+		return {};
 	}
 
 	return CanRead;
@@ -162,7 +162,6 @@ bool XyzImage::toImage(char* data, size_t size, QImage &img) {
 			*dst++ = 255;
 		}
 	}
-
 	QImage q((uchar*)pixels, w, h, QImage::Format_ARGB32);
 	img = q;
 

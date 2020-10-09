@@ -1,22 +1,14 @@
 /*
- * Copyright (c) 2016 gencache authors
- * This file is released under the MIT License
- * http://opensource.org/licenses/MIT
+ * Copyright (c) 2016-2020 gencache authors
+ * This file is released under the ISC License
+ * https://opensource.org/licenses/ISC
  */
 
+#include <unicode/normalizer2.h>
 #include <unicode/unistr.h>
 #ifdef _WIN32
-#  define VC_EXTRALEAN
-#  define WIN32_LEAN_AND_MEAN
-#  ifndef NOMINMAX
-#    define NOMINMAX
-#  endif
 #  include <Windows.h>
 #  include "dirent_win.h"
-   /* symlinks are not supported under windows currently */
-#  ifndef DT_LNK
-#    define DT_LNK DT_REG
-#  endif
 #else
 #  include <dirent.h>
 #endif
@@ -25,77 +17,117 @@
 #include <sstream>
 #include <sys/types.h>
 #include <sys/stat.h>
-
-#include "json.hpp"
-
-/* legacy mode, linear list */
-#define LEGACY 1
+#include <ctime>
+#include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 
-json parse_dir_recursive(const std::string& path, const int depth) {
-	DIR *dir;
-	struct dirent *dent;
-	json r;
+const icu::Normalizer2* icu_normalizer;
 
+std::string strip_ext(const std::string& in_file) {
+	return in_file.substr(0, in_file.find_last_of("."));
+}
+
+std::string basename(const std::string& in_file) {
+	size_t pos = in_file.find_last_of("/");
+	if (pos == std::string::npos) {
+		return in_file;
+	}
+	return in_file.substr(pos + 1);
+}
+
+json parse_dir_recursive(const std::string& path, const int depth, const bool first = false) {
 #ifdef _WIN32
-	// Will only work when the game has files in the current codepage
-	// but should be good enough for the typical use case
-	const char* codepage = std::string("cp" + std::to_string(GetACP())).c_str();
+	struct _wdirent* dent;
+#else
+	struct dirent* dent;
 #endif
+
+	json r;
+	UErrorCode icu_error = U_ZERO_ERROR;
 
 	/* do not recurse any further */
-	if(depth == 0)
+	if (depth == 0)
 		return r;
 
-	dir = opendir(path.c_str());
-	if(dir != nullptr) {
-		while((dent = readdir(dir)) != nullptr) {
-			std::string dirname;
-			/* unicode aware lowercase conversion */
-			std::string lower_dirname;
+#ifdef _WIN32
+	auto dir = _wopendir(reinterpret_cast<const wchar_t*>(
+			icu::UnicodeString::fromUTF8(path).getTerminatedBuffer()));
+#else
+	auto dir = opendir(path.c_str());
+#endif
+	if (dir != nullptr) {
+		if (!first) {
+			r["_dirname"] = basename(path);
+		}
 
 #ifdef _WIN32
-			icu::UnicodeString(dent->d_name, codepage).toLower().toUTF8String(lower_dirname);
-			icu::UnicodeString(dent->d_name, codepage).toUTF8String(dirname);
+		while ((dent = _wreaddir(dir)) != nullptr) {
+#else
+		while ((dent = readdir(dir)) != nullptr) {
+#endif
+			std::string dirname;
+			std::string lower_dirname;
+			icu::UnicodeString uni_lower_dirname;
+
+			/* unicode aware lowercase conversion */
+#ifdef _WIN32
+			icu::UnicodeString(dent->d_name).toUTF8String(dirname);
+			uni_lower_dirname = icu::UnicodeString(dent->d_name).toLower();
 #else
 			dirname = std::string(dent->d_name);
-			icu::UnicodeString(dent->d_name).toLower().toUTF8String(lower_dirname);
+			uni_lower_dirname = icu::UnicodeString(dent->d_name, "utf-8").toLower();
 #endif
+			/* normalization */
+			icu::UnicodeString normalized_dirname =
+				icu_normalizer->normalize(uni_lower_dirname, icu_error);
+			if (U_FAILURE(icu_error)) {
+				uni_lower_dirname.toUTF8String(lower_dirname);
+				std::cerr << "Failed to normalize \"" << lower_dirname << "\"! Using lowercase conversion." << std::endl;
+			} else {
+				normalized_dirname.toUTF8String(lower_dirname);
+			}
+
+			if (dirname == "_dirname") {
+				std::cerr << "Skipping _dirname: File conflicts with reserved keyword!" << std::endl;
+				continue;
+			}
 
 			/* dig deeper, but skip upper and current directory */
-			if(dent->d_type == DT_DIR && dirname != ".." && dirname != ".") {
+			if (dent->d_type == DT_DIR && dirname != ".." && dirname != ".") {
 				json temp = parse_dir_recursive(path + "/" + dirname, depth - 1);
 				if (!temp.empty()) {
-#if LEGACY
-					for (json::iterator it = temp.begin(); it != temp.end(); ++it) {
-						std::string val = it.value();
-						std::string key = it.key();
-						r[lower_dirname + "/" + key.substr(0, key.find_last_of("."))] = dirname + "/" + val;
-					}
-#else
 					r[lower_dirname] = temp;
-#endif
 				}
 			}
 
 			/* add files */
-			if(dent->d_type == DT_REG || dent->d_type == DT_LNK) {
-				/* ExFont is a special file in the main directory, needs to be renamed */
-				if (lower_dirname.substr(0, lower_dirname.find_last_of(".")) == "exfont")
-					lower_dirname = "exfont";
+			if (dent->d_type == DT_REG || dent->d_type == DT_LNK) {
+				if (first) {
+					/* ExFont is a special file in the main directory, needs to be renamed */
+					if (strip_ext(lower_dirname) == "exfont") {
+						lower_dirname = "exfont";
+					}
 
-				r[lower_dirname] = dirname;
+					r[lower_dirname] = dirname;
+				} else {
+					r[strip_ext(lower_dirname)] = dirname;
+				}
 			}
 		}
 	}
+#ifdef _WIN32
+	_wclosedir(dir);
+#else
 	closedir(dir);
+#endif
 
 	return r;
 }
 
 int main(int argc, const char* argv[]) {
 	struct stat path_info;
+	UErrorCode icu_error = U_ZERO_ERROR;
 
 	/* defaults */
 	int recursion_depth = 3;
@@ -108,7 +140,7 @@ int main(int argc, const char* argv[]) {
 		std::string arg = argv[i];
 
 		if ((arg == "--help") || (arg == "-h")) {
-			std::cout << "gencache - JSON cache generator for EasyRPG Player ports" << std::endl << std::endl;
+			std::cout << "gencache " PACKAGE_VERSION " - JSON cache generator for EasyRPG Player ports" << std::endl << std::endl;
 			std::cout << "Usage: gencache [ Options ] [ Directory ]" << std::endl;
 			std::cout << "Options:" << std::endl;
 			std::cout << "  -h, --help             This usage message" << std::endl;
@@ -117,32 +149,32 @@ int main(int argc, const char* argv[]) {
 			std::cout << "  -r, --recurse <depth>  Recursion depth (default: " << std::to_string(recursion_depth) << ")" << std::endl << std::endl;
 			std::cout << "It uses the current directory if not given as argument." << std::endl;
 			return 0;
-		} else if((arg == "--pretty") || (arg == "-p")) {
+		} else if ((arg == "--pretty") || (arg == "-p")) {
 			pretty_print = true;
-		} else if((arg == "--output") || (arg == "-o")) {
+		} else if ((arg == "--output") || (arg == "-o")) {
 			if (i + 1 < argc) {
 				output = argv[++i];
 			} else {
-				std::cerr << "--output without file name argument" << std::endl;
+				std::cerr << "--output without file name argument." << std::endl;
 				return 1;
 			}
-		} else if((arg == "--recurse") || (arg == "-r")) {
+		} else if ((arg == "--recurse") || (arg == "-r")) {
 			if (i + 1 < argc) {
 				std::istringstream iss(argv[++i]);
 				if (!(iss >> recursion_depth)) {
-					std::cerr << "--recurse option needs a number argument" << std::endl;
+					std::cerr << "--recurse option needs a number argument." << std::endl;
 					return 1;
 				}
 			} else {
-				std::cerr << "--recurse without depth argument" << std::endl;
+				std::cerr << "--recurse without depth argument." << std::endl;
 				return 1;
 			}
 		} else {
 			if (path == ".") {
-				if(stat(arg.c_str(), &path_info) != 0) {
+				if (stat(arg.c_str(), &path_info) != 0) {
 					std::cerr << "Cannot access directory: \"" << arg << "\"" << std::endl;
 					return 1;
-				} else if(!(path_info.st_mode & S_IFDIR)) {
+				} else if (!(path_info.st_mode & S_IFDIR)) {
 					std::cerr << "Not a directory: \"" << arg << "\"" << std::endl;
 					return 1;
 				} else {
@@ -154,13 +186,39 @@ int main(int argc, const char* argv[]) {
 		}
 	}
 
+	icu_normalizer = icu::Normalizer2::getNFKCInstance(icu_error);
+	if (U_FAILURE(icu_error)) {
+		std::cerr << "Failed to initialize ICU NFKC Normalizer!" << std::endl;
+		return 1;
+	}
+
 	/* get directory contents */
-	json cache = parse_dir_recursive(path, recursion_depth);
+	json cache = parse_dir_recursive(path, recursion_depth, true);
+
+	std::time_t t = std::time(nullptr);
+	// trigraph ?-escapes
+	std::string date = R"(????-??-??)";
+	char datebuf[11];
+	if (std::strftime(datebuf, sizeof(datebuf), "%F", std::localtime(&t)))
+		date = std::string(datebuf);
+
+	/* add metadata */
+	json out = {
+		{
+			"metadata", {
+				{ "version", 2 },
+				{ "date", date }
+			}
+		},
+		{
+			"cache", cache
+		}
+	};
 
 	/* write to cache file */
 	std::ofstream cache_file;
 	cache_file.open(output);
-	cache_file << cache.dump(pretty_print ? 2 : -1);
+	cache_file << out.dump(pretty_print ? 2 : -1);
 	cache_file.close();
 	std::cout << "JSON cache has been written to \"" << output << "\"." << std::endl;
 

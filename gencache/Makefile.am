@@ -1,11 +1,12 @@
 bin_PROGRAMS = gencache
 gencache_SOURCES = \
-	src/main.cpp \
-	src/json.hpp
+	src/main.cpp
 gencache_CXXFLAGS = \
 	-std=c++11 \
-	$(ICU_CFLAGS)
+	$(ICU_CFLAGS) \
+	$(NLOHMANNJSON_CFLAGS)
 gencache_LDADD = \
-	$(ICU_LIBS)
+	$(ICU_LIBS) \
+	$(NLOHMANNJSON_LIBS)
 
-EXTRA_DIST = README.md
+EXTRA_DIST = AUTHORS.md README.md

@@ -10,6 +10,7 @@ WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
 
 #include "Reg.h"
 #include <strsafe.h>
+#include <Objbase.h>
 
 
 #pragma region Registry Helper Functions

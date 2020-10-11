@@ -180,19 +180,18 @@ public:
 				break;
 			case Cmd::ShowChoice: {
 				auto choices = Utils::GetChoices(ctx.parent->obj->event_commands, line);
-				if (choices.size() + lines.size() > lines_per_message) {
-					// The choice will be on a new page -> create two entries
-					// Event, Page, Line
-					add_evt_entry();
+				bool part_of_msg = !lines.empty() && choices.size() + lines.size() <= lines_per_message;
+				int starting_at = lines.size() + 1;
 
-					info.push_back(make_info(ctx));
-					info.push_back("Choice (" + std::to_string(choices.size()) + " options)");
-					lines = choices;
-				} else {
-					// The choice is on the same page as the current message
-					info.push_back("Choice starting at line " + std::to_string(lines.size() + 1) + " (" + std::to_string(choices.size()) + " options)");
-					lines.insert(lines.end(), choices.begin(), choices.end());
+				if (part_of_msg) {
+					info.push_back("Contains choice at line " + std::to_string(starting_at) + " (" + std::to_string(choices.size()) + " options)");
 				}
+
+				add_evt_entry();
+
+				info.push_back(make_info(ctx));
+				info.push_back("Choice (" + std::to_string(choices.size()) + " options" + (part_of_msg ? ", embedded in a message)" : ")"));
+				lines = choices;
 				add_evt_entry();
 			}
 				break;

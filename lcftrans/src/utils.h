@@ -16,6 +16,7 @@ namespace Utils {
 	std::string GetFilename(const std::string& str);
 	bool HasExt(const std::string& path, const std::string& ext);
 	std::string Join(const std::vector<std::string>& lines, char join_char = '\n');
+	std::vector<std::string> Split(const std::string& line, char split_char = '\n');
 	std::string LowerCase(const std::string &in);
 	std::string RemoveControlChars(lcf::StringView s);
 
@@ -25,4 +26,3 @@ namespace Utils {
 }
 
 #endif
-

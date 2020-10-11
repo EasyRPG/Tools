@@ -232,10 +232,6 @@ void DumpLmuLmtInner(const std::string& filename, Translation& t, const std::str
 	if (update) {
 		std::string po = get_outdir_file(Utils::LowerCase(poname + ".po"));
 		if (!po.empty()) {
-			if (poname == "Map0001") {
-				int a;
-			}
-
 			pot = Translation::fromPO(outdir + "/" + po);
 			auto stale = t.Merge(pot);
 			if (!stale.getEntries().empty()) {

@@ -10,25 +10,28 @@
 #include <ostream>
 #include <sstream>
 
-static void write_n(std::ostream& out, const std::string& line, const std::string& prefix) {
-	if (line.find("\n") != std::string::npos) {
-		std::stringstream ss(Utils::Escape(line));
-		out << prefix << " \"\"" << std::endl;
+static void write_n(std::ostream& out, const std::vector<std::string>& lines, const std::string& prefix) {
+	std::string first_line;
+	if (!lines.empty()) {
+		first_line = Utils::Escape(lines[0]);
+	}
 
-		std::string item;
+	if (lines.size() <= 1) {
+		out << prefix << " \"" << first_line << "\"\n";
+	} else {
+		std::stringstream ss(first_line);
+		out << prefix << " \"\"\n";
+
 		bool write_n = false;
-		while (std::getline(ss, item, '\n')) {
+		for (const auto& line: lines) {
 			if (write_n) {
-				out << "\\n\"" << std::endl;
+				out << "\\n\"\n";
 			}
 
-			out << "\"" << item;
-
+			out << "\"" <<  Utils::Escape(line);
 			write_n = true;
 		}
-		out << "\"" << std::endl;
-	} else {
-		out << prefix << " \"" << Utils::Escape(line) << "\"" << std::endl;
+		out << "\"\n";
 	}
 }
 

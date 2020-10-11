@@ -46,7 +46,7 @@ void Translation::writeEntries(std::ostream& out) {
 	std::string old_context = "\1";
 
 	for (Entry& e : entries) {
-		std::string key = e.context + "\1" + e.original;
+		std::string key = e.context + "\1" + Utils::Join(e.original);
 
 		items[key].push_back(&e);
 
@@ -63,10 +63,7 @@ void Translation::writeEntries(std::ostream& out) {
 			}
 
 			if (!e->info.empty()) {
-				std::stringstream ss(e->info);
-
-				std::string info;
-				while (std::getline(ss, info, '\n')) {
+				for (const auto& info: e->info) {
 					out << "#. " << info << "\n";
 				}
 			}
@@ -78,7 +75,9 @@ void Translation::writeEntries(std::ostream& out) {
 }
 
 bool Translation::addEntry(const Entry& entry) {
-	if (entry.original.empty()) {
+	if (std::all_of(entry.original.begin(), entry.original.end(), [](const auto& e) {
+		return e.empty();
+	})) {
 		return false;
 	}
 	entries.push_back(entry);
@@ -138,8 +137,8 @@ public:
 		}
 
 		Entry e;
-		e.original = Utils::Join(lines);
-		e.info = Utils::Join(info);
+		e.original = lines;
+		e.info = info;
 		t.addEntry(e);
 		lines.clear();
 		info.clear();
@@ -299,10 +298,10 @@ TranslationLdb Translation::fromLDB(const std::string& filename, const std::stri
 			}
 
 			Entry e;
-			e.original = lcf::ToString(val);
+			e.original.emplace_back(lcf::ToString(val));
 			e.context = lcf::ToString(pname) + "." + lcf::ToString(name);
 			if (ctx.parent->index > -1) {
-				e.info = "ID " + std::to_string(ctx.parent->index + 1);
+				e.info.emplace_back("ID " + std::to_string(ctx.parent->index + 1));
 			}
 			t.terms.addEntry(e);
 		}
@@ -339,8 +338,8 @@ Translation Translation::fromLMT(const std::string &filename, const std::string 
 
 		if (isMapType(*ctx.obj)) {
 			Entry e;
-			e.original = lcf::ToString(val);
-			e.info = "ID " + std::to_string(ctx.parent->index + 1);
+			e.original.emplace_back(lcf::ToString(val));
+			e.info.emplace_back("ID " + std::to_string(ctx.parent->index + 1));
 			t.addEntry(e);
 		}
 	});
@@ -423,30 +422,34 @@ Translation Translation::fromPO(const std::string& filename) {
 
 	auto read_msgstr = [&]() {
 		// Parse multiply lines until empty line or comment
-		e.translation = extract_string(6);
+		std::string msgstr = extract_string(6);
 
 		while (std::getline(in, line, '\n')) {
 			if (line.empty() || starts_with("#")) {
 				break;
 			}
-			e.translation += extract_string(0);
+			msgstr += extract_string(0);
 		}
 
 		parse_item = false;
+		e.translation = Utils::Split(msgstr);
 		t.addEntry(e);
+		e = Entry();
 	};
 
 	auto read_msgid = [&]() {
 		// Parse multiply lines until empty line or msgstr is encountered
-		e.original = extract_string(5);
+		std::string msgid = extract_string(5);
 
 		while (std::getline(in, line, '\n')) {
 			if (line.empty() || starts_with("msgstr")) {
+				e.original = Utils::Split(msgid);
 				read_msgstr();
 				return;
 			}
-			e.original += extract_string(0);
+			msgid += extract_string(0);
 		}
+		e.original = Utils::Split(msgid);
 	};
 
 	while (std::getline(in, line, '\n')) {

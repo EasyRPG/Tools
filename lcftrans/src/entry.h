@@ -8,13 +8,14 @@
 #define LCFTRANS_ENTRY
 
 #include <string>
+#include <vector>
 
 class Entry {
 public:
-	std::string original; // msgid
-	std::string translation; // msgstr
+	std::vector<std::string> original; // msgid
+	std::vector<std::string> translation; // msgstr
 	std::string context; // msgctxt
-	std::string info; // #.
+	std::vector<std::string> info; // #.
 	std::string location; // #: // Unused, maybe useful later
 
 	void write(std::ostream& out) const;

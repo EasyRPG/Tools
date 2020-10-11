@@ -56,6 +56,25 @@ std::string Utils::Join(const std::vector<std::string>& lines, char join_char) {
 	return ret;
 }
 
+std::vector<std::string> Utils::Split(const std::string& line, char split_char) {
+	std::vector<std::string> tokens;
+	std::string cur_token;
+
+	for (auto c: line) {
+		if (c == '\n') {
+			tokens.push_back(cur_token);
+			cur_token.clear();
+			continue;
+		}
+
+		cur_token.push_back(c);
+	}
+
+	tokens.push_back(cur_token);
+
+	return tokens;
+}
+
 std::string Utils::LowerCase(const std::string& in) {
 	auto lower = [](char& c) -> char {
 		if (c >= 'A' && c <= 'Z') {

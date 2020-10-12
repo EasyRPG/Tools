@@ -12,6 +12,7 @@ add_library(xyz_thumbnailer SHARED
 	dllmain.cpp
 	Reg.cpp
 	RpgMakerXyzThumbnailProvider.cpp
+	GlobalExportFunctions.def
 )
 
 set_target_properties(xyz_thumbnailer PROPERTIES OUTPUT_NAME "EasyRpgXyzShellExtThumbnailHandler")

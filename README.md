@@ -34,7 +34,11 @@ These are the currently available tools:
  * GENCACHE: generates a JSON cache file of game directory contents.
 
    Syntax: `gencache [Options] [Directory]`
-   
+
+ * LcfTrans: extracts text out of LDB, LMT and LMU files and creates po files.
+
+   Syntax: `lcftrans [Options] Directory [Encoding]`
+
  * LCFVIZ: Parses the map tree and creates a GraphViz (dot) graph.
 
    Syntax: `lcfviz [Options] [Directory]`

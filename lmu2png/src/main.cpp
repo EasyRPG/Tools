@@ -26,7 +26,7 @@
 #include <lcf/lmu/reader.h>
 #include <lcf/reader_lcf.h>
 #include <lcf/rpg/map.h>
-#include <lcf/data.h>
+#include <lcf/rpg/chipset.h>
 #include "chipset.h"
 #include "sdlxyz.h"
 
@@ -272,13 +272,15 @@ int main(int argc, char** argv) {
 		if (database.empty())
 			database = path + "RPG_RT.ldb";
 
-		if (!lcf::LDB_Reader::Load(database, encoding)) {
+		auto db = lcf::LDB_Reader::Load(database, encoding);
+
+		if (!db) {
 			std::cout << lcf::LcfReader::GetError() << std::endl;
 			exit(EXIT_FAILURE);
 		}
 
-		assert(map->chipset_id <= (int)lcf::Data::chipsets.size());
-		lcf::rpg::Chipset & cs = lcf::Data::chipsets[map->chipset_id - 1];
+		assert(map->chipset_id <= (int)db->chipsets.size());
+		lcf::rpg::Chipset & cs = db->chipsets[map->chipset_id - 1];
 		std::string chipset_base(cs.chipset_name);
 
 		chipset = FindResource("ChipSet", chipset_base);

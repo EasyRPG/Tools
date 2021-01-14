@@ -13,7 +13,6 @@
 #include <sstream>
 #include <fstream>
 #include <lcf/context.h>
-#include <lcf/data.h>
 #include <lcf/rpg/eventcommand.h>
 #include <lcf/ldb/reader.h>
 #include <lcf/lmu/reader.h>
@@ -259,7 +258,12 @@ std::string makeEventInfoString(const battle_event_ctx<T>& ctx) {
 TranslationLdb Translation::fromLDB(const std::string& filename, const std::string& encoding) {
 	TranslationLdb t;
 
-	lcf::LDB_Reader::Load(filename, encoding);
+	auto db = lcf::LDB_Reader::Load(filename, encoding);
+
+	if (!db) {
+		std::cerr << "Error loading database " << filename << "\n";
+		return t;
+	}
 
 	auto chunks = { "actors", "classes", "skills", "items", "enemies", "states", "terms" };
 
@@ -273,7 +277,7 @@ TranslationLdb Translation::fromLDB(const std::string& filename, const std::stri
 	};
 
 	// Process non-event strings
-	lcf::rpg::ForEachString(lcf::Data::data, [&](const auto& val, const auto& ctx) {
+	lcf::rpg::ForEachString(*db, [&](const auto& val, const auto& ctx) {
 		if (!ctx.parent || ctx.parent->parent) {
 			// Only care about entries one level deep
 			return;
@@ -307,10 +311,10 @@ TranslationLdb Translation::fromLDB(const std::string& filename, const std::stri
 		}
 	});
 
-	parseEvents<lcf::rpg::CommonEvent>(t.common_events, lcf::Data::data, [](auto& ctx) {
+	parseEvents<lcf::rpg::CommonEvent>(t.common_events, *db, [](auto& ctx) {
 		return makeEventInfoString(ctx);
 	});
-	parseEvents<lcf::rpg::TroopPage>(t.battle_events, lcf::Data::data, [](auto& ctx) {
+	parseEvents<lcf::rpg::TroopPage>(t.battle_events, *db, [](auto& ctx) {
 		return makeEventInfoString(ctx);
 	});
 
@@ -318,7 +322,7 @@ TranslationLdb Translation::fromLDB(const std::string& filename, const std::stri
 }
 
 template <typename T, typename U>
-bool isMapType(const T&) {}
+bool isMapType(const T&) { return false; }
 
 bool isMapType(const lcf::rpg::MapInfo& info) {
 	return info.type == lcf::rpg::TreeMap::MapType_map;
@@ -327,10 +331,15 @@ bool isMapType(const lcf::rpg::MapInfo& info) {
 Translation Translation::fromLMT(const std::string &filename, const std::string &encoding) {
 	Translation t;
 
-	lcf::LMT_Reader::Load(filename, encoding);
+	auto tree = lcf::LMT_Reader::Load(filename, encoding);
+
+	if (!tree) {
+		std::cerr << "Error loading map tree " << filename << "\n";
+		return t;
+	}
 
 	// Process non-event strings
-	lcf::rpg::ForEachString(lcf::Data::treemap, [&](const auto& val, const auto& ctx) {
+	lcf::rpg::ForEachString(*tree, [&](const auto& val, const auto& ctx) {
 		if (!ctx.parent || ctx.name != "name") {
 			// Only care about "name" of map tree items
 			return;
@@ -360,7 +369,7 @@ Translation Translation::fromLMU(const std::string& filename, const std::string&
 Translation Translation::fromPO(const std::string& filename) {
 	// Super simple parser.
 	// Only parses msgstr, msgid and msgctx
-	
+
 	Translation t;
 
 	std::ifstream in(filename);

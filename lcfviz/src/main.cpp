@@ -18,7 +18,6 @@
 #include <lcf/reader_util.h>
 #include <lcf/lmt/reader.h>
 #include <lcf/lmu/reader.h>
-#include <lcf/data.h>
 #include <lcf/rpg/treemap.h>
 
 #include "utils.h"
@@ -27,8 +26,6 @@
 #include "dirent_win.h"
 #else
 #include <dirent.h>
-#include <lcf/data.h>
-
 #endif
 
 #define DATABASE_FILE "rpg_rt.ldb"
@@ -348,13 +345,18 @@ void parse_map(const lcf::ContextStructBase<lcf::rpg::MapInfo>& ctx) {
 }
 
 void ParseLmt(const std::string& filename) {
-	lcf::LMT_Reader::Load(filename, encoding);
+	auto tree = lcf::LMT_Reader::Load(filename, encoding);
 
-	if (start_map_id == -1) {
-		start_map_id = lcf::Data::treemap.start.party_map_id;
+	if (!tree) {
+		std::cerr << "Error loading maptree " << filename << "\n";
+		return;
 	}
 
-	lcf::rpg::ForEachString(lcf::Data::treemap, [&](const auto& val, const auto& ctx) {
+	if (start_map_id == -1) {
+		start_map_id = tree->start.party_map_id;
+	}
+
+	lcf::rpg::ForEachString(*tree, [&](const auto& val, const auto& ctx) {
 		if (ctx.name == "name") {
 			parse_map(ctx);
 		}

@@ -284,7 +284,7 @@ TranslationLdb Translation::fromLDB(const std::string& filename, const std::stri
 		}
 
 		if (!val.empty()) {
-			lcf::StringView pname = lcf::ToString(ctx.parent->name);
+			lcf::StringView pname = ctx.parent->name;
 			lcf::StringView name = ctx.name;
 
 			if (std::find(chunks.begin(), chunks.end(), pname) == chunks.end()) {

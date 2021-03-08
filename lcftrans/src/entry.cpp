@@ -43,3 +43,7 @@ void Entry::write(std::ostream& out) const {
 	write_n(out, original, "msgid");
 	write_n(out, translation, "msgstr");
 }
+
+bool Entry::hasTranslation() const {
+	return !(translation.size() == 1 && translation[0].empty());
+}

@@ -29,6 +29,15 @@ public:
 
 	Translation Merge(const Translation& from);
 
+	/**
+	 * Takes the msgids of from and attempts to match them against msgid of
+	 * this. When matched the msgid of from is copied to msgstr of this.
+	 * @param from Translation to match from
+	 * @param matched Number of matches
+	 * @return Entries that failed to match
+	 */
+	Translation Match(const Translation& from, int& matches);
+
 	static TranslationLdb fromLDB(const std::string& filename, const std::string& encoding);
 	static Translation fromLMT(const std::string& filename, const std::string& encoding);
 	static Translation fromLMU(const std::string& filename, const std::string& encoding);

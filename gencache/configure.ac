@@ -11,6 +11,10 @@ AC_PROG_CXXCPP
 AC_PROG_CXX
 
 PKG_CHECK_MODULES([ICU], [icu-i18n])
-PKG_CHECK_MODULES([NLOHMANNJSON], [nlohmann_json])
+PKG_CHECK_MODULES([NLOHMANNJSON], [nlohmann_json],,[
+	AC_CHECK_HEADER([nlohmann/json.hpp],,[
+		AC_MSG_ERROR([Could not find 'nlohmann_json' package! Consider installing version 3.9.0 or newer.])
+	],[ ])
+])
 
 AC_OUTPUT

@@ -12,6 +12,7 @@
 #include <map>
 #include <sstream>
 #include <fstream>
+#include <regex>
 #include <lcf/context.h>
 #include <lcf/rpg/eventcommand.h>
 #include <lcf/ldb/reader.h>
@@ -62,9 +63,13 @@ void Translation::writeEntries(std::ostream& out) {
 			}
 
 			if (!e->info.empty()) {
-				for (const auto& info: e->info) {
+				for (const auto &info: e->info) {
 					out << "#. " << info << "\n";
 				}
+			}
+
+			if (e->fuzzy) {
+				out << "#, fuzzy\n";
 			}
 		}
 		items[s][0]->write(out);
@@ -106,6 +111,92 @@ Translation Translation::Merge(const Translation& from) {
 				found = true;
 			}
 		}
+		if (!found) {
+			stale.addEntry(e_from);
+		}
+	}
+
+	return stale;
+}
+
+Translation Translation::Match(const Translation& from, int& matches) {
+	matches = 0;
+	auto efrom = from.getEntries();
+
+	auto starts_with = [](const std::string& line, const std::string& search) {
+		return line.find(search) == 0;
+	};
+
+	Translation stale;
+	for (auto& e_from : efrom) {
+		bool found = false;
+		if (!e_from.context.empty()) {
+			// Match by context first
+			for (auto& e_to : entries) {
+				if (e_to.hasTranslation()) {
+					continue;
+				}
+
+				if (e_from.context == e_to.context) {
+					// Also ensure that the ID matches to reduce false-positive rate
+					std::string info = Utils::Join(e_from.info, '\n');
+					if (starts_with(info, "ID ")) {
+						std::string info_to = Utils::Join(e_to.info, '\n');
+						if (info != info_to) {
+							continue;
+						}
+					}
+
+					e_to.translation = e_from.original;
+					++matches;
+					found = true;
+					break;
+				}
+			}
+		} else {
+			std::string info = Utils::Join(e_from.info, '\n');
+			if (starts_with(info, "ID ")) {
+				// Is a event location identifier
+				// Attempt exact match
+				for (auto& e_to : entries) {
+					if (e_to.hasTranslation()) {
+						continue;
+					}
+
+					std::string info_to = Utils::Join(e_to.info, '\n');
+					if (info == info_to) {
+						e_to.translation = e_from.original;
+						found = true;
+						++matches;
+						break;
+					}
+				}
+				// Attempt fuzzy match (Ignore line number)
+				if (!found) {
+					std::regex re("Line [0-9]+");
+					std::string info_cp = info;
+					info.clear();
+					std::regex_replace(std::back_inserter(info), info_cp.begin(), info_cp.end(), re, "");
+					for (auto& e_to : entries) {
+						if (e_to.hasTranslation()) {
+							continue;
+						}
+
+						std::string info_to_cp = Utils::Join(e_to.info, '\n');
+						std::string info_to;
+						std::regex_replace(std::back_inserter(info_to), info_to_cp.begin(), info_to_cp.end(), re, "");
+						if (info == info_to) {
+							e_to.translation = e_from.original;
+							e_to.fuzzy = true;
+							found = true;
+							++matches;
+							break;
+						}
+					}
+				}
+			}
+		}
+
 		if (!found) {
 			stale.addEntry(e_from);
 		}
@@ -368,7 +459,7 @@ Translation Translation::fromLMU(const std::string& filename, const std::string&
 
 Translation Translation::fromPO(const std::string& filename) {
 	// Super simple parser.
-	// Only parses msgstr, msgid and msgctx
+	// Only parses msgstr, msgid, msgctx and #.
 
 	Translation t;
 
@@ -429,6 +520,10 @@ Translation Translation::fromPO(const std::string& filename) {
 		return out.str();
 	};
 
+	auto read_msgctx = [&]() {
+		e.context = extract_string(7);
+	};
+
 	auto read_msgstr = [&]() {
 		// Parse multiply lines until empty line or comment
 		std::string msgstr = extract_string(6);
@@ -461,6 +556,34 @@ Translation Translation::fromPO(const std::string& filename) {
 		e.original = Utils::Split(msgid);
 	};
 
+	auto read_info = [&]() {
+		if (line.length() <= 3) {
+			return;
+		}
+
+		// Parse multiply lines until empty line, msgctxt or msgid is encountered
+		e.info.push_back(line.substr(3));
+
+		while (std::getline(in, line, '\n')) {
+			if (line.empty() || starts_with("msgctx") || starts_with("msgid")) {
+				if (starts_with("msgctx")) {
+					read_msgctx();
+				} else if (starts_with("msgid")) {
+					read_msgid();
+				}
+				return;
+			}
+			else if (starts_with("#.")) {
+				if (line.length() > 3) {
+					e.info.push_back(line.substr(3));
+				}
+			} else {
+				std::cerr << "Parse error " << line << " (" << line << "). Expected #., msgctx or msgid\n";
+				return;
+			}
+		}
+	};
+
 	while (std::getline(in, line, '\n')) {
 		if (!found_header) {
 			if (starts_with("msgstr")) {
@@ -470,9 +593,11 @@ Translation Translation::fromPO(const std::string& filename) {
 		}
 
 		if (!parse_item) {
-			if (starts_with("msgctxt")) {
-				e.context = extract_string(7);
-
+			if (starts_with("#.")) {
+				parse_item = true;
+				read_info();
+			} else if (starts_with("msgctxt")) {
+				read_msgctx();
 				parse_item = true;
 			} else if (starts_with("msgid")) {
 				parse_item = true;

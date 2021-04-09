@@ -26,34 +26,40 @@
 void DumpLdb(const std::string& filename);
 void DumpLmu(const std::string& filename);
 void DumpLmt(const std::string& filename);
+int MatchMode();
 
 static int print_help(char** argv) {
-	std::cerr << "lcftrans - Translate RPG Maker 2000/2003 projects\n";
+	std::cerr << "lcftrans - Translate RPG Maker 2000/2003 projects\n"; //                        | <- EOL
 	std::cerr << "Usage: " << argv[0] << " [OPTION...] DIRECTORY [ENCODING]\n";
 	std::cerr << "Required options (one of):\n";
-	std::cerr << "  -c, --create  Create a new translation\n";
-	std::cerr << "  -u, --update  Update an existing translation\n";
+	std::cerr << "  -c, --create        Create a new translation\n";
+	std::cerr << "  -u, --update        Update an existing translation\n";
+	std::cerr << "  -m, --match MDIR    Match the translations in MDIR and DIRECTORY. When matched\n";
+	std::cerr << "                      the original in MDIR becomes the translation of DIRECTORY.\n";
+	std::cerr << "                      Used to generate translations from games where the trans-\n";
+	std::cerr << "                      lation is hardcoded in the game files.\n";
 	std::cerr << "\n";
 	std::cerr << "Optional options:\n";
-	std::cerr << "  -h, --help    This usage message\n";
-	std::cerr << "  -o, --output  Output directory (default: working directory)\n";
+	std::cerr << "  -h, --help          This usage message\n";
+	std::cerr << "  -o, --output        OUTDIR Output directory (default: working directory)\n";
 	std::cerr << "\n";
-	std::cerr << "When not specified the encoding is read from RPG_RT.ini or auto-detected.\n";
+	std::cerr << "When not specified the encoding is read from RPG_RT.ini or auto-detected\n";
 	return 2;
 }
 
 std::string encoding;
 std::string outdir = ".";
+std::string merge_indir;
+std::string indir;
 std::vector<std::pair<std::string, std::string>> source_files;
 std::vector<std::pair<std::string, std::string>> outdir_files;
 std::string ini_file;
 std::string database_file;
+bool create = false;
 bool update = false;
+bool match = false;
 
 int main(int argc, char** argv) {
-	std::string indir;
-	bool create = false;
-
 	if (argc <= 1) {
 		return print_help(argv);
 	}
@@ -61,6 +67,8 @@ int main(int argc, char** argv) {
 	/* parse command line arguments */
 	for (int i = 1; i < argc; ++i) {
 		std::string arg = argv[i];
+
+		bool any_mode = create || update || match;
 
 		if ((arg == "--help") || (arg == "-h")) {
 			return print_help(argv);
@@ -70,15 +78,26 @@ int main(int argc, char** argv) {
 				++i;
 			}
 		} else if ((arg == "--create") || (arg == "-c")) {
-			if (update) {
+			if (any_mode) {
 				return print_help(argv);
 			}
 			create = true;
 		} else if ((arg == "--update") || (arg == "-u")) {
-			if (create) {
+			if (any_mode) {
 				return print_help(argv);
 			}
 			update = true;
+		} else if ((arg == "--merge") || (arg == "-m")) {
+			if (any_mode) {
+				return print_help(argv);
+			}
+			match = true;
+			if (i + 1 < argc) {
+				merge_indir = argv[i + 1];
+				++i;
+			} else {
+				return print_help(argv);
+			}
 		} else {
 			indir = arg;
 			if (i+1 < argc) {
@@ -88,7 +107,7 @@ int main(int argc, char** argv) {
 		}
 	}
 
-	if (indir.empty() || (!update && !create)) {
+	if (indir.empty() || (!update && !create && !match) || outdir == merge_indir) {
 		return print_help(argv);
 	}
 
@@ -101,15 +120,40 @@ int main(int argc, char** argv) {
 
 	dirHandle = opendir(outdir.c_str());
 	if (!dirHandle) {
-		std::cerr << "Can not access output directory " << outdir << "\n";
+		std::cerr << "Cannot access output directory " << outdir << "\n";
 		return 1;
 	}
 	if (update) {
 		while (nullptr != (dirEntry = readdir(dirHandle))) {
 			outdir_files.emplace_back(dirEntry->d_name, Utils::LowerCase(dirEntry->d_name));
 		}
+	} else if (match) {
+		// Also read the source translations
+		closedir(dirHandle);
+		dirHandle = opendir(indir.c_str());
+		if (!dirHandle) {
+			std::cerr << "Cannot access input directory " << indir << "\n";
+			return 1;
+		}
+		while (nullptr != (dirEntry = readdir(dirHandle))) {
+			outdir_files.emplace_back(dirEntry->d_name, Utils::LowerCase(dirEntry->d_name));
+		}
+		closedir(dirHandle);
+		dirHandle = opendir(merge_indir.c_str());
+		if (!dirHandle) {
+			std::cerr << "Cannot access merge input directory " << merge_indir << "\n";
+			return 1;
+		}
+		while (nullptr != (dirEntry = readdir(dirHandle))) {
+			source_files.emplace_back(dirEntry->d_name, Utils::LowerCase(dirEntry->d_name));
+		}
 	}
+
 	closedir(dirHandle);
+
+	if (match) {
+		return MatchMode();
+	}
 
 	dirHandle = opendir(indir.c_str());
 	if (dirHandle) {
@@ -258,3 +302,58 @@ void DumpLmt(const std::string& filename) {
 	DumpLmuLmtInner(filename, t, "RPG_RT.lmt");
 }
 
+int MatchMode() {
+	std::sort(source_files.begin(), source_files.end(), [](const auto& a, const auto& b) {
+		return a.first < b.first;
+	});
+
+	auto ends_with_po = [](const std::string& src) {
+		std::string po = ".po";
+		if (src.length() >= po.size()) {
+			std::string src_l = Utils::LowerCase(src);
+			return (0 == src_l.compare(src_l.length() - po.length(), po.length(), po));
+		} else {
+			return false;
+		}
+	};
+
+	for (const auto& s : source_files) {
+		if (!ends_with_po(s.first)) {
+			continue;
+		}
+
+		for (const auto& o : outdir_files) {
+			if (s.second == o.second) {
+				Translation src_po = Translation::fromPO(merge_indir + "/" + s.first);
+				Translation dst_po = Translation::fromPO( indir + "/" + o.first);
+				int matched;
+				auto stale = dst_po.Match(src_po, matched);
+				std::cout << "Matching " << o.first << "\n";
+				std::cout << " " << matched << " term" << (matched != 1 ? "s" : "") << " matched\n";
+
+				int fuzzy = 0;
+				for (const auto& e : dst_po.getEntries()) {
+					if (e.fuzzy) {
+						++fuzzy;
+					}
+				}
+				if (fuzzy > 0) {
+					std::string term = fuzzy == 1 ? " term is " : " terms are ";
+					std::cout << " " << fuzzy << term << "fuzzy matched\n";
+				}
+
+				if (!stale.getEntries().empty()) {
+					std::string term = stale.getEntries().size() == 1 ? " term is " : " terms are ";
+					std::cout << " " << stale.getEntries().size() << term << "unmatched\n";
+					std::ofstream outfile(outdir + "/" + o.first.substr(0, o.first.size() - 3) + ".unmatched.po");
+					stale.write(outfile);
+				}
+				std::ofstream outfile(outdir + "/" + o.first);
+				dst_po.write(outfile);
+				continue;
+			}
+		}
+	}
+
+	return 0;
+}

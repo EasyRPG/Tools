@@ -229,9 +229,11 @@ public:
 		Entry e;
 		e.original = lines;
 		e.info = info;
+		e.context = context;
 		t.addEntry(e);
 		lines.clear();
 		info.clear();
+		context.clear();
 	};
 
 	template<typename T>
@@ -284,6 +286,22 @@ public:
 				add_evt_entry();
 			}
 				break;
+			case Cmd::ChangeHeroName:
+				add_evt_entry();
+				info.push_back(make_info(ctx));
+				info.push_back("ChangeHeroName (Actor " + std::to_string(ctx.obj->parameters[0]) + ")");
+				lines.push_back(Utils::RemoveControlChars(estring));
+				context = "actors.name";
+				add_evt_entry();
+				break;
+			case Cmd::ChangeHeroTitle:
+				add_evt_entry();
+				info.push_back(make_info(ctx));
+				info.push_back("ChangeHeroTitle (Actor " + std::to_string(ctx.obj->parameters[0]) + ")");
+				lines.push_back(Utils::RemoveControlChars(estring));
+				context = "actors.title";
+				add_evt_entry();
+				break;
 			default:
 				break;
 		}
@@ -296,6 +314,7 @@ public:
 private:
 	std::vector<std::string> lines;
 	std::vector<std::string> info;
+	std::string context;
 	int prev_evt_id = 0;
 	int prev_line = 0;
 	int prev_indent = 0;

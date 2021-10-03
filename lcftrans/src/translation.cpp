@@ -473,10 +473,6 @@ Translation Translation::fromPO(const std::string& filename) {
 
 	Entry e;
 
-	auto starts_with = [&line_view](const std::string& search) {
-		return line_view.find(search) == 0;
-	};
-
 	auto extract_string = [&](int offset) -> std::string {
 		if (offset >= line_view.size()) {
 			std::cerr << "Parse error (Line " << line_number << ") is empty\n";
@@ -542,7 +538,7 @@ Translation Translation::fromPO(const std::string& filename) {
 		while (Utils::ReadLine(in, line)) {
 			line_view = Utils::TrimWhitespace(line);
 			++line_number;
-			if (line_view.empty() || starts_with("#")) {
+			if (line_view.empty() || line_view.starts_with("#")) {
 				break;
 			}
 			msgstr += extract_string(0);
@@ -561,7 +557,7 @@ Translation Translation::fromPO(const std::string& filename) {
 		while (Utils::ReadLine(in, line)) {
 			line_view = Utils::TrimWhitespace(line);
 			++line_number;
-			if (line_view.empty() || starts_with("msgstr")) {
+			if (line_view.empty() || line_view.starts_with("msgstr")) {
 				e.original = Utils::Split(msgid);
 				read_msgstr();
 				return;
@@ -580,15 +576,16 @@ Translation Translation::fromPO(const std::string& filename) {
 		e.info.push_back(line.substr(3));
 
 		while (Utils::ReadLine(in, line)) {
-			if (line.empty() || starts_with("msgctx") || starts_with("msgid")) {
-				if (starts_with("msgctx")) {
+			line_view = Utils::TrimWhitespace(line);
+			if (line.empty() || line_view.starts_with("msgctx") || line_view.starts_with("msgid")) {
+				if (line_view.starts_with("msgctx")) {
 					read_msgctx();
-				} else if (starts_with("msgid")) {
+				} else if (line_view.starts_with("msgid")) {
 					read_msgid();
 				}
 				return;
 			}
-			else if (starts_with("#.")) {
+			else if (line_view.starts_with("#.")) {
 				if (line.length() > 3) {
 					e.info.push_back(line.substr(3));
 				}
@@ -603,27 +600,27 @@ Translation Translation::fromPO(const std::string& filename) {
 		line_view = Utils::TrimWhitespace(line);
 		++line_number;
 		if (!found_header) {
-			if (starts_with("msgstr")) {
+			if (line_view.starts_with("msgstr")) {
 				found_header = true;
 			}
 			continue;
 		}
 
 		if (!parse_item) {
-			if (starts_with("#.")) {
+			if (line_view.starts_with("#.")) {
 				parse_item = true;
 				read_info();
-			} else if (starts_with("msgctxt")) {
+			} else if (line_view.starts_with("msgctxt")) {
 				read_msgctx();
 				parse_item = true;
-			} else if (starts_with("msgid")) {
+			} else if (line_view.starts_with("msgid")) {
 				parse_item = true;
 				read_msgid();
 			}
 		} else {
-			if (starts_with("msgid")) {
+			if (line_view.starts_with("msgid")) {
 				read_msgid();
-			} else if (starts_with("msgstr")) {
+			} else if (line_view.starts_with("msgstr")) {
 				read_msgstr();
 			}
 		}

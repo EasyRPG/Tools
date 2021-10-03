@@ -538,7 +538,7 @@ Translation Translation::fromPO(const std::string& filename) {
 		// Parse multiply lines until empty line or comment
 		std::string msgstr = extract_string(6);
 
-		while (std::getline(in, line, '\n')) {
+		while (Utils::ReadLine(in, line)) {
 			std::cout << line << "\n";
 			++line_number;
 			if (line.empty() || starts_with("#")) {
@@ -557,7 +557,7 @@ Translation Translation::fromPO(const std::string& filename) {
 		// Parse multiply lines until empty line or msgstr is encountered
 		std::string msgid = extract_string(5);
 
-		while (std::getline(in, line, '\n')) {
+		while (Utils::ReadLine(in, line)) {
 			std::cout << line << "\n";
 			++line_number;
 			if (line.empty() || starts_with("msgstr")) {
@@ -578,7 +578,7 @@ Translation Translation::fromPO(const std::string& filename) {
 		// Parse multiply lines until empty line, msgctxt or msgid is encountered
 		e.info.push_back(line.substr(3));
 
-		while (std::getline(in, line, '\n')) {
+		while (Utils::ReadLine(in, line)) {
 			if (line.empty() || starts_with("msgctx") || starts_with("msgid")) {
 				if (starts_with("msgctx")) {
 					read_msgctx();
@@ -598,7 +598,7 @@ Translation Translation::fromPO(const std::string& filename) {
 		}
 	};
 
-	while (std::getline(in, line, '\n')) {
+	while (Utils::ReadLine(in, line)) {
 		std::cout << line << "\n";
 		++line_number;
 		if (!found_header) {

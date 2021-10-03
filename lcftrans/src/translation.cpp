@@ -468,6 +468,7 @@ Translation Translation::fromPO(const std::string& filename) {
 	std::string line;
 	bool found_header = false;
 	bool parse_item = false;
+	int line_number = 0;
 
 	Entry e;
 
@@ -475,17 +476,26 @@ Translation Translation::fromPO(const std::string& filename) {
 		return line.find(search) == 0;
 	};
 
-	auto extract_string = [&line](int offset) {
+	auto extract_string = [&](int offset) -> std::string {
+		if (offset >= line.size()) {
+			std::cerr << "Parse error (Line " << line_number << ") is empty\n";
+			return "";
+		}
+
 		std::stringstream out;
 		bool slash = false;
 		bool first_quote = false;
 
 		for (char c : line.substr(offset)) {
-			if (c == ' ' && !first_quote) {
-				continue;
-			} else if (c == '"' && !first_quote) {
-				first_quote = true;
-				continue;
+			if (!first_quote) {
+				if (c == ' ') {
+					continue;
+				} else if (c == '"') {
+					first_quote = true;
+					continue;
+				}
+				std::cerr << "Parse error (Line " << line_number << "): Expected \", got " << c << ": " << line << "\n";
+				return "";	
 			}
 
 			if (!slash && c == '\\') {
@@ -503,7 +513,7 @@ Translation Translation::fromPO(const std::string& filename) {
 						out << '"';
 						break;
 					default:
-						std::cerr << "Parse error " << line << " (" << c << ")\n";
+						std::cerr << "Parse error (Line " << line_number << "): Expected \\, \\n or \", got " << c << ": " << line << "\n";
 						break;
 				}
 			} else {
@@ -516,7 +526,7 @@ Translation Translation::fromPO(const std::string& filename) {
 			}
 		}
 
-		std::cerr << "Parse error: Unterminated line" << line << "\n";
+		std::cerr << "Parse error (Line " << line_number << "): Unterminated line: " << line << "\n";
 		return out.str();
 	};
 
@@ -529,6 +539,8 @@ Translation Translation::fromPO(const std::string& filename) {
 		std::string msgstr = extract_string(6);
 
 		while (std::getline(in, line, '\n')) {
+			std::cout << line << "\n";
+			++line_number;
 			if (line.empty() || starts_with("#")) {
 				break;
 			}
@@ -546,6 +558,8 @@ Translation Translation::fromPO(const std::string& filename) {
 		std::string msgid = extract_string(5);
 
 		while (std::getline(in, line, '\n')) {
+			std::cout << line << "\n";
+			++line_number;
 			if (line.empty() || starts_with("msgstr")) {
 				e.original = Utils::Split(msgid);
 				read_msgstr();
@@ -585,6 +599,8 @@ Translation Translation::fromPO(const std::string& filename) {
 	};
 
 	while (std::getline(in, line, '\n')) {
+		std::cout << line << "\n";
+		++line_number;
 		if (!found_header) {
 			if (starts_with("msgstr")) {
 				found_header = true;

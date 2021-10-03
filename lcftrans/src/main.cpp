@@ -9,6 +9,7 @@
 #include <iostream>
 #include <lcf/encoder.h>
 #include <lcf/reader_util.h>
+#include <lcf/ldb/reader.h>
 
 #include "translation.h"
 #include "utils.h"
@@ -17,6 +18,7 @@
 #include "dirent_win.h"
 #else
 #include <dirent.h>
+
 #endif
 
 #define DATABASE_FILE "rpg_rt.ldb"
@@ -178,9 +180,9 @@ int main(int argc, char** argv) {
 			encoding = lcf::ReaderUtil::GetEncoding(ini_file);
 		}
 		if (encoding.empty() && !database_file.empty()) {
-			std::ifstream i(database_file, std::ios::binary);
-			if (i) {
-				encoding = lcf::ReaderUtil::DetectEncoding(i);
+			auto db = lcf::LDB_Reader::Load(database_file, encoding);
+			if (db) {
+				encoding = lcf::ReaderUtil::DetectEncoding(*db);
 			}
 		}
 	}

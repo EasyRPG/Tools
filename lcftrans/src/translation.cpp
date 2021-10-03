@@ -466,18 +466,19 @@ Translation Translation::fromPO(const std::string& filename) {
 	std::ifstream in(filename);
 
 	std::string line;
+	lcf::StringView line_view;
 	bool found_header = false;
 	bool parse_item = false;
 	int line_number = 0;
 
 	Entry e;
 
-	auto starts_with = [&line](const std::string& search) {
-		return line.find(search) == 0;
+	auto starts_with = [&line_view](const std::string& search) {
+		return line_view.find(search) == 0;
 	};
 
 	auto extract_string = [&](int offset) -> std::string {
-		if (offset >= line.size()) {
+		if (offset >= line_view.size()) {
 			std::cerr << "Parse error (Line " << line_number << ") is empty\n";
 			return "";
 		}
@@ -486,7 +487,7 @@ Translation Translation::fromPO(const std::string& filename) {
 		bool slash = false;
 		bool first_quote = false;
 
-		for (char c : line.substr(offset)) {
+		for (char c : line_view.substr(offset)) {
 			if (!first_quote) {
 				if (c == ' ') {
 					continue;
@@ -539,9 +540,9 @@ Translation Translation::fromPO(const std::string& filename) {
 		std::string msgstr = extract_string(6);
 
 		while (Utils::ReadLine(in, line)) {
-			std::cout << line << "\n";
+			line_view = Utils::TrimWhitespace(line);
 			++line_number;
-			if (line.empty() || starts_with("#")) {
+			if (line_view.empty() || starts_with("#")) {
 				break;
 			}
 			msgstr += extract_string(0);
@@ -558,9 +559,9 @@ Translation Translation::fromPO(const std::string& filename) {
 		std::string msgid = extract_string(5);
 
 		while (Utils::ReadLine(in, line)) {
-			std::cout << line << "\n";
+			line_view = Utils::TrimWhitespace(line);
 			++line_number;
-			if (line.empty() || starts_with("msgstr")) {
+			if (line_view.empty() || starts_with("msgstr")) {
 				e.original = Utils::Split(msgid);
 				read_msgstr();
 				return;
@@ -599,7 +600,7 @@ Translation Translation::fromPO(const std::string& filename) {
 	};
 
 	while (Utils::ReadLine(in, line)) {
-		std::cout << line << "\n";
+		line_view = Utils::TrimWhitespace(line);
 		++line_number;
 		if (!found_header) {
 			if (starts_with("msgstr")) {

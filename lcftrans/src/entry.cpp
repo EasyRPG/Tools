@@ -45,5 +45,5 @@ void Entry::write(std::ostream& out) const {
 }
 
 bool Entry::hasTranslation() const {
-	return !(translation.size() == 1 && translation[0].empty());
+	return !translation.empty() && !(translation.size() == 1 && translation[0].empty());
 }

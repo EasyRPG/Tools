@@ -97,7 +97,7 @@ Translation Translation::Merge(const Translation& from) {
 
 	// Ignore strings that don't have a translation at all
 	efrom.erase(
-		std::remove_if(efrom.begin(), efrom.end(), [](Entry &e) { return e.translation.empty(); }),
+		std::remove_if(efrom.begin(), efrom.end(), [](Entry &e) { return !e.hasTranslation(); }),
 	efrom.end());
 
 	// Copy over and find stale entries (entries that are not available in the new translation anymore)

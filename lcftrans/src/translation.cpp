@@ -596,6 +596,7 @@ Translation Translation::fromPO(const std::string& filename) {
 
 		while (Utils::ReadLine(in, line)) {
 			line_view = Utils::TrimWhitespace(line);
+			++line_number;
 			if (line.empty() || line_view.starts_with("msgctx") || line_view.starts_with("msgid")) {
 				if (line_view.starts_with("msgctx")) {
 					read_msgctx();
@@ -609,7 +610,7 @@ Translation Translation::fromPO(const std::string& filename) {
 					e.info.push_back(line.substr(3));
 				}
 			} else {
-				std::cerr << "Parse error " << line << " (" << line << "). Expected #., msgctx or msgid\n";
+				std::cerr << "Parse error (Line " << line_number << ") " << line << " (" << line << "). Expected #., msgctx or msgid\n";
 				return;
 			}
 		}

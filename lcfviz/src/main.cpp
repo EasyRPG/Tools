@@ -19,6 +19,7 @@
 #include <lcf/lmt/reader.h>
 #include <lcf/lmu/reader.h>
 #include <lcf/rpg/treemap.h>
+#include <lcf/ldb/reader.h>
 
 #include "utils.h"
 
@@ -145,9 +146,9 @@ int main(int argc, char** argv) {
 			encoding = lcf::ReaderUtil::GetEncoding(ini_file);
 		}
 		if (encoding.empty() && !database_file.empty()) {
-			std::ifstream i(database_file, std::ios::binary);
-			if (i) {
-				encoding = lcf::ReaderUtil::DetectEncoding(i);
+			auto db = lcf::LDB_Reader::Load(database_file, encoding);
+			if (db) {
+				encoding = lcf::ReaderUtil::DetectEncoding(*db);
 			}
 		}
 	}

@@ -97,7 +97,7 @@ Translation Translation::Merge(const Translation& from) {
 
 	// Ignore strings that don't have a translation at all
 	efrom.erase(
-		std::remove_if(efrom.begin(), efrom.end(), [](Entry &e) { return e.translation.empty(); }),
+		std::remove_if(efrom.begin(), efrom.end(), [](Entry &e) { return !e.hasTranslation(); }),
 	efrom.end());
 
 	// Copy over and find stale entries (entries that are not available in the new translation anymore)
@@ -229,9 +229,11 @@ public:
 		Entry e;
 		e.original = lines;
 		e.info = info;
+		e.context = context;
 		t.addEntry(e);
 		lines.clear();
 		info.clear();
+		context.clear();
 	};
 
 	template<typename T>
@@ -284,6 +286,22 @@ public:
 				add_evt_entry();
 			}
 				break;
+			case Cmd::ChangeHeroName:
+				add_evt_entry();
+				info.push_back(make_info(ctx));
+				info.push_back("ChangeHeroName (Actor " + std::to_string(ctx.obj->parameters[0]) + ")");
+				lines.push_back(Utils::RemoveControlChars(estring));
+				context = "actors.name";
+				add_evt_entry();
+				break;
+			case Cmd::ChangeHeroTitle:
+				add_evt_entry();
+				info.push_back(make_info(ctx));
+				info.push_back("ChangeHeroTitle (Actor " + std::to_string(ctx.obj->parameters[0]) + ")");
+				lines.push_back(Utils::RemoveControlChars(estring));
+				context = "actors.title";
+				add_evt_entry();
+				break;
 			default:
 				break;
 		}
@@ -296,6 +314,7 @@ public:
 private:
 	std::vector<std::string> lines;
 	std::vector<std::string> info;
+	std::string context;
 	int prev_evt_id = 0;
 	int prev_line = 0;
 	int prev_indent = 0;
@@ -466,26 +485,33 @@ Translation Translation::fromPO(const std::string& filename) {
 	std::ifstream in(filename);
 
 	std::string line;
+	lcf::StringView line_view;
 	bool found_header = false;
 	bool parse_item = false;
+	int line_number = 0;
 
 	Entry e;
 
-	auto starts_with = [&line](const std::string& search) {
-		return line.find(search) == 0;
-	};
+	auto extract_string = [&](int offset) -> std::string {
+		if (offset >= line_view.size()) {
+			std::cerr << "Parse error (Line " << line_number << ") is empty\n";
+			return "";
+		}
 
-	auto extract_string = [&line](int offset) {
 		std::stringstream out;
 		bool slash = false;
 		bool first_quote = false;
 
-		for (char c : line.substr(offset)) {
-			if (c == ' ' && !first_quote) {
-				continue;
-			} else if (c == '"' && !first_quote) {
-				first_quote = true;
-				continue;
+		for (char c : line_view.substr(offset)) {
+			if (!first_quote) {
+				if (c == ' ') {
+					continue;
+				} else if (c == '"') {
+					first_quote = true;
+					continue;
+				}
+				std::cerr << "Parse error (Line " << line_number << "): Expected \", got " << c << ": " << line << "\n";
+				return "";	
 			}
 
 			if (!slash && c == '\\') {
@@ -503,7 +529,7 @@ Translation Translation::fromPO(const std::string& filename) {
 						out << '"';
 						break;
 					default:
-						std::cerr << "Parse error " << line << " (" << c << ")\n";
+						std::cerr << "Parse error (Line " << line_number << "): Expected \\, \\n or \", got " << c << ": " << line << "\n";
 						break;
 				}
 			} else {
@@ -516,7 +542,7 @@ Translation Translation::fromPO(const std::string& filename) {
 			}
 		}
 
-		std::cerr << "Parse error: Unterminated line" << line << "\n";
+		std::cerr << "Parse error (Line " << line_number << "): Unterminated line: " << line << "\n";
 		return out.str();
 	};
 
@@ -528,8 +554,10 @@ Translation Translation::fromPO(const std::string& filename) {
 		// Parse multiply lines until empty line or comment
 		std::string msgstr = extract_string(6);
 
-		while (std::getline(in, line, '\n')) {
-			if (line.empty() || starts_with("#")) {
+		while (Utils::ReadLine(in, line)) {
+			line_view = Utils::TrimWhitespace(line);
+			++line_number;
+			if (line_view.empty() || line_view.starts_with("#")) {
 				break;
 			}
 			msgstr += extract_string(0);
@@ -545,8 +573,10 @@ Translation Translation::fromPO(const std::string& filename) {
 		// Parse multiply lines until empty line or msgstr is encountered
 		std::string msgid = extract_string(5);
 
-		while (std::getline(in, line, '\n')) {
-			if (line.empty() || starts_with("msgstr")) {
+		while (Utils::ReadLine(in, line)) {
+			line_view = Utils::TrimWhitespace(line);
+			++line_number;
+			if (line_view.empty() || line_view.starts_with("msgstr")) {
 				e.original = Utils::Split(msgid);
 				read_msgstr();
 				return;
@@ -564,49 +594,53 @@ Translation Translation::fromPO(const std::string& filename) {
 		// Parse multiply lines until empty line, msgctxt or msgid is encountered
 		e.info.push_back(line.substr(3));
 
-		while (std::getline(in, line, '\n')) {
-			if (line.empty() || starts_with("msgctx") || starts_with("msgid")) {
-				if (starts_with("msgctx")) {
+		while (Utils::ReadLine(in, line)) {
+			line_view = Utils::TrimWhitespace(line);
+			++line_number;
+			if (line.empty() || line_view.starts_with("msgctx") || line_view.starts_with("msgid")) {
+				if (line_view.starts_with("msgctx")) {
 					read_msgctx();
-				} else if (starts_with("msgid")) {
+				} else if (line_view.starts_with("msgid")) {
 					read_msgid();
 				}
 				return;
 			}
-			else if (starts_with("#.")) {
+			else if (line_view.starts_with("#.")) {
 				if (line.length() > 3) {
 					e.info.push_back(line.substr(3));
 				}
 			} else {
-				std::cerr << "Parse error " << line << " (" << line << "). Expected #., msgctx or msgid\n";
+				std::cerr << "Parse error (Line " << line_number << ") " << line << " (" << line << "). Expected #., msgctx or msgid\n";
 				return;
 			}
 		}
 	};
 
-	while (std::getline(in, line, '\n')) {
+	while (Utils::ReadLine(in, line)) {
+		line_view = Utils::TrimWhitespace(line);
+		++line_number;
 		if (!found_header) {
-			if (starts_with("msgstr")) {
+			if (line_view.starts_with("msgstr")) {
 				found_header = true;
 			}
 			continue;
 		}
 
 		if (!parse_item) {
-			if (starts_with("#.")) {
+			if (line_view.starts_with("#.")) {
 				parse_item = true;
 				read_info();
-			} else if (starts_with("msgctxt")) {
+			} else if (line_view.starts_with("msgctxt")) {
 				read_msgctx();
 				parse_item = true;
-			} else if (starts_with("msgid")) {
+			} else if (line_view.starts_with("msgid")) {
 				parse_item = true;
 				read_msgid();
 			}
 		} else {
-			if (starts_with("msgid")) {
+			if (line_view.starts_with("msgid")) {
 				read_msgid();
-			} else if (starts_with("msgstr")) {
+			} else if (line_view.starts_with("msgstr")) {
 				read_msgstr();
 			}
 		}

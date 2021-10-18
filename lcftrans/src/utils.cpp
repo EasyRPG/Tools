@@ -97,6 +97,64 @@ std::string Utils::RemoveControlChars(lcf::StringView s) {
 	return out;
 }
 
+// based on https://stackoverflow.com/questions/6089231/
+bool Utils::ReadLine(std::istream& is, std::string& line_out) {
+	std::istream::sentry se(is, true);
+	std::streambuf* sb = is.rdbuf();
+
+	if (!is) {
+		return false;
+	}
+
+	line_out.clear();
+
+	for(;;) {
+		int c = sb->sbumpc();
+		switch (c) {
+			case '\n':
+				return true;
+			case '\r':
+				if (sb->sgetc() == '\n') {
+					sb->sbumpc();
+				}
+				return true;
+			case EOF:
+				// Also handle the case when the last line has no line ending
+				if (line_out.empty()) {
+					is.setstate(std::ios::eofbit);
+					return false;
+				}
+				return true;
+			default:
+				line_out += (char)c;
+		}
+	}
+}
+
+lcf::StringView Utils::TrimWhitespace(lcf::StringView s) {
+	size_t left = 0;
+	for (auto& c: s) {
+		if (std::isspace(static_cast<int>(c))) {
+			++left;
+		} else {
+			break;
+		}
+	}
+	s.remove_prefix(left);
+
+	size_t right = 0;
+	for (auto it = s.crbegin(); it != s.crend(); ++it) {
+		if (std::isspace(static_cast<int>(*it))) {
+			++right;
+		} else {
+			break;
+		}
+	}
+	s.remove_suffix(right);
+
+	return s;
+}
+
 std::vector<std::string> Utils::GetChoices(lcf::Span<lcf::rpg::EventCommand> list, int start_index) {
 	using Cmd = lcf::rpg::EventCommand::Code;
 	constexpr int max_num_choices = 4;

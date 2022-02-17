@@ -101,9 +101,21 @@ json parse_dir_recursive(const std::string& path, const int depth, const bool fi
 				}
 			}
 
+			auto keep_extension = [](const std::string& src) {
+				for (const auto& s: {".ini", ".po"}) {
+					std::string k = s;
+					if (src.length() >= k.size()) {
+						if (0 == src.compare(src.length() - k.length(), k.length(), k)) {
+							return true;
+						}
+					}
+				}
+				return false;
+			};
+
 			/* add files */
 			if (dent->d_type == DT_REG || dent->d_type == DT_LNK) {
-				if (first) {
+				if (first || keep_extension(lower_dirname)) {
 					/* ExFont is a special file in the main directory, needs to be renamed */
 					if (strip_ext(lower_dirname) == "exfont") {
 						lower_dirname = "exfont";

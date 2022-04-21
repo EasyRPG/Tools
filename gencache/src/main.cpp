@@ -142,7 +142,7 @@ int main(int argc, const char* argv[]) {
 	UErrorCode icu_error = U_ZERO_ERROR;
 
 	/* defaults */
-	int recursion_depth = 3;
+	int recursion_depth = 4;
 	bool pretty_print = false;
 	std::string path = ".";
 	std::string output = "index.json";

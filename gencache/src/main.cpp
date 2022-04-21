@@ -98,7 +98,7 @@ int main(int argc, const char* argv[]) {
 	struct stat path_info;
 
 	/* defaults */
-	int recursion_depth = 3;
+	int recursion_depth = 4;
 	bool pretty_print = false;
 	std::string path = ".";
 	std::string output = "index.json";

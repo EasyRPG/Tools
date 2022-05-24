@@ -6,6 +6,7 @@
 
 #include <unicode/normalizer2.h>
 #include <unicode/unistr.h>
+#include <unicode/locid.h>
 #ifdef _WIN32
 #  include <Windows.h>
 #  include "dirent_win.h"
@@ -23,6 +24,7 @@
 using json = nlohmann::json;
 
 const icu::Normalizer2* icu_normalizer;
+const icu::Locale* icu_loc_invariant;
 
 std::string strip_ext(const std::string& in_file) {
 	return in_file.substr(0, in_file.find_last_of("."));
@@ -73,10 +75,10 @@ json parse_dir_recursive(const std::string& path, const int depth, const bool fi
 			/* unicode aware lowercase conversion */
 #ifdef _WIN32
 			icu::UnicodeString(dent->d_name).toUTF8String(dirname);
-			uni_lower_dirname = icu::UnicodeString(dent->d_name).toLower();
+			uni_lower_dirname = icu::UnicodeString(dent->d_name).toLower(*icu_loc_invariant);
 #else
 			dirname = std::string(dent->d_name);
-			uni_lower_dirname = icu::UnicodeString(dent->d_name, "utf-8").toLower();
+			uni_lower_dirname = icu::UnicodeString(dent->d_name, "utf-8").toLower(*icu_loc_invariant);
 #endif
 			/* normalization */
 			icu::UnicodeString normalized_dirname =
@@ -203,6 +205,8 @@ int main(int argc, const char* argv[]) {
 		std::cerr << "Failed to initialize ICU NFKC Normalizer!" << std::endl;
 		return 1;
 	}
+
+	icu_loc_invariant = &icu::Locale::getRoot();
 
 	/* get directory contents */
 	json cache = parse_dir_recursive(path, recursion_depth, true);

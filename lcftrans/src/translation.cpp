@@ -302,6 +302,17 @@ public:
 				context = "actors.title";
 				add_evt_entry();
 				break;
+			case Cmd::ConditionalBranch:
+				// Condition: Actor Name is
+				if (ctx.obj->parameters[0] == 5 && ctx.obj->parameters[2] == 1) {
+					add_evt_entry();
+					info.push_back(make_info(ctx));
+					info.push_back("Condition (Actor Name = " + lcf::ToString(estring) + ")");
+					lines.push_back(Utils::RemoveControlChars(estring));
+					context = "actors.name";
+					add_evt_entry();
+				}
+				break;
 			default:
 				break;
 		}

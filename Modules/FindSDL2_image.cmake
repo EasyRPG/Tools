@@ -61,7 +61,7 @@ endif()
 find_package(SDL2 REQUIRED)
 
 find_library(SDL2_IMAGE_LIBRARY
-        NAMES SDL2_image
+        NAMES SDL2_image SDL2_image-static
         HINTS
         ENV SDL2IMAGEDIR
         ENV SDL2DIR

@@ -54,7 +54,7 @@ endif()
 find_package(PkgConfig QUIET)
 set(SDL2_INCLUDE_HINTS)
 set(SDL2_LIB_HINTS)
-if(PKG_CONFIG_FOUND)
+if(PKG_CONFIG_FOUND AND NOT ANDROID)
 	pkg_search_module(SDL2PC QUIET sdl2)
 	if(SDL2PC_INCLUDE_DIRS)
 		set(SDL2_INCLUDE_HINTS ${SDL2PC_INCLUDE_DIRS})
@@ -68,7 +68,7 @@ include(FindPackageHandleStandardArgs)
 
 find_library(SDL2_LIBRARY
 	NAMES
-	SDL2
+	SDL2 SDL2-static
 	HINTS
 	${SDL2_LIB_HINTS}
 	PATHS
@@ -125,7 +125,7 @@ if(WIN32 AND SDL2_LIBRARY)
 endif()
 
 
-if(WIN32 OR ANDROID OR IOS OR (APPLE AND NOT _sdl2_framework))
+if(WIN32 OR IOS OR (APPLE AND NOT _sdl2_framework))
 	set(SDL2_EXTRA_REQUIRED SDL2_SDLMAIN_LIBRARY)
 	find_library(SDL2_SDLMAIN_LIBRARY
 		NAMES
@@ -241,27 +241,37 @@ if(SDL2_FOUND)
 			set_property(TARGET SDL2::SDL2 APPEND_STRING PROPERTY
 				INTERFACE_LINK_LIBRARIES "winmm;imm32;version;setupapi")
 		elseif(APPLE)
-			find_library(COREVIDEO CoreVideo)
-			find_library(COCOA_LIBRARY Cocoa)
-			find_library(IOKIT IOKit)
-			find_library(FORCEFEEDBACK ForceFeedback)
-			find_library(CARBON_LIBRARY Carbon)
-			find_library(COREAUDIO CoreAudio)
-			find_library(AUDIOTOOLBOX AudioToolbox)
-			find_library(AUDIOUNIT AudioUnit)
-			find_library(METAL Metal)
-			find_library(ICONV_LIBRARY iconv)
-			set_property(TARGET SDL2::SDL2 APPEND_STRING PROPERTY
+			find_library(COREVIDEO CoreVideo REQUIRED)
+			find_library(COCOA_LIBRARY Cocoa REQUIRED)
+			find_library(IOKIT IOKit REQUIRED)
+			find_library(FORCEFEEDBACK ForceFeedback REQUIRED)
+			find_library(CARBON_LIBRARY Carbon REQUIRED)
+			find_library(COREAUDIO CoreAudio REQUIRED)
+			find_library(AUDIOTOOLBOX AudioToolbox REQUIRED)
+			find_library(AUDIOUNIT AudioUnit REQUIRED)
+			find_library(METAL Metal REQUIRED)
+			find_library(GAMECONTROLLER GameController REQUIRED)
+			find_library(ICONV_LIBRARY iconv REQUIRED)
+			find_library(COREHAPTICS CoreHaptics REQUIRED)
+			set_property(TARGET SDL2::SDL2 APPEND PROPERTY
 				INTERFACE_LINK_LIBRARIES ${COREVIDEO} ${COCOA_LIBRARY}
 					${IOKIT} ${FORCEFEEDBACK} ${CARBON_LIBRARY}
 					${COREAUDIO} ${AUDIOTOOLBOX} ${AUDIOUNIT} ${METAL}
-					${ICONV_LIBRARY})
+					${GAMECONTROLLER} ${COREHAPTICS} ${ICONV_LIBRARY})
+		elseif(ANDROID)
+			find_library(HIDAPI hidapi)
+			if(HIDAPI)
+				set_property(TARGET SDL2::SDL2 APPEND_STRING PROPERTY
+					INTERFACE_LINK_LIBRARIES ${HIDAPI})
+			endif()
 		else()
 			# Remove -lSDL2 -lSDL2main from the pkg-config linker line,
 			# to prevent linking against the system library
 			list(REMOVE_ITEM SDL2PC_STATIC_LIBRARIES SDL2main SDL2)
-			set_property(TARGET SDL2::SDL2 APPEND_STRING PROPERTY
+			set_property(TARGET SDL2::SDL2 APPEND PROPERTY
 				INTERFACE_LINK_LIBRARIES "${SDL2PC_STATIC_LIBRARIES}")
+			set_property(TARGET SDL2::SDL2 APPEND PROPERTY
+				INTERFACE_INCLUDE_DIRECTORIES "${SDL2PC_STATIC_LIBRARY_DIRS}")
 		endif()
 	endif()
 	mark_as_advanced(SDL2_ROOT_DIR)

@@ -61,7 +61,7 @@ std::vector<std::string> Utils::Split(const std::string& line, char split_char) 
 	std::string cur_token;
 
 	for (auto c: line) {
-		if (c == '\n') {
+		if (c == split_char) {
 			tokens.push_back(cur_token);
 			cur_token.clear();
 			continue;

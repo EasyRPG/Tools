@@ -313,6 +313,21 @@ public:
 					add_evt_entry();
 				}
 				break;
+			case Cmd::Maniac_ShowStringPicture: {
+				// Show String Picture
+				add_evt_entry();
+				auto tokens = Utils::Split(lcf::ToString(estring), '\x01');
+				if (tokens.size() >= 4) {
+					info.push_back(make_info(ctx));
+					info.push_back("Show String Picture");
+					for (auto& line: Utils::Split(tokens[1], '\n')) {
+						lines.push_back(Utils::RemoveControlChars(line));
+					}
+					context = "strpic";
+					add_evt_entry();
+				}
+				break;
+			}
 			default:
 				break;
 		}

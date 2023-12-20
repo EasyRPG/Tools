@@ -10,7 +10,7 @@ lcftrans_SOURCES = \
 	src/utils.cpp \
 	src/utils.h
 lcftrans_CXXFLAGS = \
-	-std=c++14 \
+	-std=c++17 \
 	$(LCF_CFLAGS)
 lcftrans_LDADD = \
 	$(LCF_LIBS)

@@ -5,7 +5,7 @@ lcfviz_SOURCES = \
 	src/utils.cpp \
 	src/utils.h
 lcfviz_CXXFLAGS = \
-	-std=c++14 \
+	-std=c++17 \
 	$(LCF_CFLAGS)
 lcfviz_LDADD = \
 	$(LCF_LIBS)

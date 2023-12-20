@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.7)
 project(lcftrans VERSION 1.0 LANGUAGES CXX)
 
-# C++14 is required
-set(CMAKE_CXX_STANDARD 14)
+# C++17 is required
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 

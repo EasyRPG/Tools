@@ -7,14 +7,18 @@
  * file that was distributed with this source code.
  */
 
-#ifndef XYZ_H
-#define XYZ_H
+#ifndef XYZTHUMBNAIL_H
+#define XYZTHUMBNAIL_H
 
-#include <QImage>
+#include <KIO/ThumbnailCreator>
 
-// Shared code for creating a XYZ QImage
-namespace XyzImage {
-	bool toImage(char* xyz_buf, size_t size, QImage &img);
-}
+// Required by KDE ThumbCreator
+class XyzThumbnailCreator : public KIO::ThumbnailCreator {
+public:
+	XyzThumbnailCreator(QObject *parent, const QVariantList &args);
+	~XyzThumbnailCreator() override;
 
-#endif // XYZ_H
+	KIO::ThumbnailResult create(const KIO::ThumbnailRequest &request) override;
+};
+
+#endif // XYZTHUMBNAIL_H

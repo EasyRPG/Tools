@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+    <mime-type type="image/xyz">
+        <comment>RPG Maker 2k/2k3 graphics file</comment>
+        <icon name="image-x-generic"/>
+        <glob pattern="*.xyz"/>
+        <magic>
+            <match type="string" value="XYZ1" offset="0"/>
+        </magic>
+    </mime-type>
+</mime-info>

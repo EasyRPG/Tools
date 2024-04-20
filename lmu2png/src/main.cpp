@@ -309,7 +309,7 @@ int main(int argc, char** argv) {
 		memset(csflag + 10000, 0x10, 144);
 	}
 
-	SDL_Surface* output_img = SDL_CreateRGBSurface(0, map->width * 16, map->height * 16, 32, 0, 0, 0, 0);
+	SDL_Surface* output_img = SDL_CreateRGBSurface(0, map->width * 16, map->height * 16, 32, 0xff, 0xff00, 0xff0000, 0xff000000);
 
 	if (!output_img) {
 		std::cout << "Unable to create output image." << std::endl;

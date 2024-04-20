@@ -34,15 +34,30 @@
 #undef main
 
 const std::string usage = R"(Usage: lmu2png map.lmu [options]
-Options:
-	-d database.ldb
-	-c chipset.png
-	-e encoding
-	-o output.png
-	--no-background
-	--no-lowertiles
-	--no-uppertiles
-	--no-events
+
+	-h, --help                      Display this help message
+
+	-d database.ldb                 Specify the database file to use; 
+	                                if unspecified, it will use the database file
+	                                in the same folder as the map
+	-c chipset.png                  Specify the chipset file to use; 
+	                                if unspecified, it will be read from the 
+	                                database
+	-e encoding                     Specify the project's encoding
+	                                (defaults to autodetection)
+	-o output.png                   Set the output filepath
+	                                (defaults to the map's directory)
+
+	--no-background, --nb           Skip drawing the parallax background
+	--no-lowertiles, --nl           Skip drawing lower layer tiles
+	--no-uppertiles, --nu           Skip drawing upper layer tiles
+	--no-events, --ne               Skip drawing events
+	--ignore-conditions, --ic       Always draw the first page of the event 
+	                                instead of finding the first page with no
+	                                conditions
+	--simulate-movement, --sm       For event pages with certain animation 
+	                                types, draw the middle frame instead of 
+	                                the frame specified for the page
 )";
 
 std::string GetFileDirectory (const std::string& file) {
@@ -52,8 +67,9 @@ std::string GetFileDirectory (const std::string& file) {
 
 bool Exists(const std::string& filename) {
 	std::ifstream infile(filename.c_str());
-    return infile.good();
+	return infile.good();
 }
+
 std::string path;
 
 std::string FindResource(const std::string& folder, const std::string& base_name) {
@@ -132,7 +148,7 @@ void DrawEvents(SDL_Surface* output_img, stChipset * gen, std::unique_ptr<lcf::r
 			}
 		}
 		if (!evp)
-				continue;
+			continue;
 		// Event layering
 		if (evp->layer >= 0 && evp->layer < 3 && evp->layer != layer)
 			continue;
@@ -148,13 +164,13 @@ void DrawEvents(SDL_Surface* output_img, stChipset * gen, std::unique_ptr<lcf::r
 
 			SDL_Surface* charset_img(LoadImage(charset.c_str(), true));
 			SDL_Rect src_rect;
-			if (!simulate_movement || (simulate_movement && evp->animation_type))
-				src_rect = {(evp->character_index % 4) * 72 + evp->character_pattern * 24,
-					 (evp->character_index / 4) * 128 + evp->character_direction * 32, 24, 32};
-			else
+			if (simulate_movement && (evp->animation_type == 0 || evp->animation_type == 2 || evp->animation_type == 6))
 				src_rect = {(evp->character_index % 4) * 72 + 24,
 					 (evp->character_index / 4) * 128 + evp->character_direction * 32, 24, 32};
-			SDL_Rect dst_rect {ev.x * 16 - 4, ev.y * 16 - 16, 16, 32}; // Why -4 and -16?
+			else
+				src_rect = {(evp->character_index % 4) * 72 + evp->character_pattern * 24,
+					 (evp->character_index / 4) * 128 + evp->character_direction * 32, 24, 32};
+			SDL_Rect dst_rect {ev.x * 16 - 4, ev.y * 16 - 16, 16, 32};
 			SDL_BlitSurface(charset_img, &src_rect, output_img, &dst_rect);
 		}
 	}
@@ -250,17 +266,17 @@ int main(int argc, char** argv) {
 		} else if (arg == "-o") {
 			if (++i < argc)
 				output = argv[i];
-		} else if (arg == "--no-background" || arg == "-nb") {
+		} else if (arg == "--no-background" || arg == "--nb") {
 			show_background = false;
-		} else if (arg == "--no-lowertiles" || arg == "-nl") {
+		} else if (arg == "--no-lowertiles" || arg == "--nl") {
 			show_lowertiles = false;
-		} else if (arg == "--no-uppertiles" || arg == "-nu") {
+		} else if (arg == "--no-uppertiles" || arg == "--nu") {
 			show_uppertiles = false;
-		} else if (arg == "--no-events" || arg == "-ne") {
+		} else if (arg == "--no-events" || arg == "--ne") {
 			show_events = false;
-		} else if (arg == "--ignore-conditions" || arg == "-ic") {
+		} else if (arg == "--ignore-conditions" || arg == "--ic") {
 			ignore_conditions = true;
-		} else if (arg == "--simulate-movement" || arg == "-sm") {
+		} else if (arg == "--simulate-movement" || arg == "--sm") {
 			simulate_movement = true;
 		} else {
 			input = arg;

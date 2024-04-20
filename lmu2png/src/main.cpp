@@ -117,22 +117,25 @@ void DrawTiles(SDL_Surface* output_img, stChipset * gen, uint8_t * csflag, std::
 	}
 }
 
-void DrawEvents(SDL_Surface* output_img, stChipset * gen, std::unique_ptr<lcf::rpg::Map> & map, int layer) {
+void DrawEvents(SDL_Surface* output_img, stChipset * gen, std::unique_ptr<lcf::rpg::Map> & map, int layer, bool ignore_conditions, bool simulate_movement) {
 	for (const lcf::rpg::Event& ev : map->events) {
 		const lcf::rpg::EventPage* evp = nullptr;
 		// Find highest page without conditions
-		for (int i = 0; i < (int)ev.pages.size(); ++i) {
-			const auto& flg = ev.pages[i].condition.flags;
-			if (flg.switch_a || flg.switch_b || flg.variable || flg.item || flg.actor || flg.timer || flg.timer2)
-				continue;
-			evp = &ev.pages[i];
+		if (ignore_conditions)
+			evp = &ev.pages[0];
+		else {
+			for (int i = 0; i < (int)ev.pages.size(); ++i) {
+				const auto& flg = ev.pages[i].condition.flags;
+				if (flg.switch_a || flg.switch_b || flg.variable || flg.item || flg.actor || flg.timer || flg.timer2)
+					continue;
+				evp = &ev.pages[i];
+			}
 		}
 		if (!evp)
-			continue;
+				continue;
 		// Event layering
 		if (evp->layer >= 0 && evp->layer < 3 && evp->layer != layer)
 			continue;
-
 		if (evp->character_name.empty())
 			gen->RenderTile(output_img, (ev.x)*16, (ev.y)*16, 0x2710 + evp->character_index, 0);
 		else {
@@ -144,15 +147,20 @@ void DrawEvents(SDL_Surface* output_img, stChipset * gen, std::unique_ptr<lcf::r
 			}
 
 			SDL_Surface* charset_img(LoadImage(charset.c_str(), true));
-			SDL_Rect src_rect {(evp->character_index % 4) * 72 + evp->character_pattern * 24,
-				 (evp->character_index / 4) * 128 + evp->character_direction * 32, 24, 32};
+			SDL_Rect src_rect;
+			if (!simulate_movement || (simulate_movement && evp->animation_type))
+				src_rect = {(evp->character_index % 4) * 72 + evp->character_pattern * 24,
+					 (evp->character_index / 4) * 128 + evp->character_direction * 32, 24, 32};
+			else
+				src_rect = {(evp->character_index % 4) * 72 + 24,
+					 (evp->character_index / 4) * 128 + evp->character_direction * 32, 24, 32};
 			SDL_Rect dst_rect {ev.x * 16 - 4, ev.y * 16 - 16, 16, 32}; // Why -4 and -16?
 			SDL_BlitSurface(charset_img, &src_rect, output_img, &dst_rect);
 		}
 	}
 }
 
-void RenderCore(SDL_Surface* output_img, std::string chipset, uint8_t * csflag, std::unique_ptr<lcf::rpg::Map> & map, int show_background, int show_lowertiles, int show_uppertiles, int show_events) {
+void RenderCore(SDL_Surface* output_img, std::string chipset, uint8_t * csflag, std::unique_ptr<lcf::rpg::Map> & map, int show_background, int show_lowertiles, int show_uppertiles, int show_events, bool ignore_conditions, bool simulate_movement) {
 	SDL_Surface* chipset_img;
 	if (!chipset.empty()) {
 		chipset_img = LoadImage(chipset.c_str(), true);
@@ -193,15 +201,15 @@ void RenderCore(SDL_Surface* output_img, std::string chipset, uint8_t * csflag, 
 		DrawTiles(output_img, &gen, csflag, map, show_lowertiles, show_uppertiles, 0);
 	// Draw below-player & player-level events
 	if (show_events) {
-		DrawEvents(output_img, &gen, map, 0);
-		DrawEvents(output_img, &gen, map, 1);
+		DrawEvents(output_img, &gen, map, 0, ignore_conditions, simulate_movement);
+		DrawEvents(output_img, &gen, map, 1, ignore_conditions, simulate_movement);
 	}
 	// Draw above tile layer
 	if (show_lowertiles || show_uppertiles)
 		DrawTiles(output_img, &gen, csflag, map, show_lowertiles, show_uppertiles, 1);
 	// Draw events
 	if (show_events)
-		DrawEvents(output_img, &gen, map, 2);
+		DrawEvents(output_img, &gen, map, 2, ignore_conditions, simulate_movement);
 }
 
 bool MapEventYSort(const lcf::rpg::Event& ev1, const lcf::rpg::Event& ev2) {
@@ -218,6 +226,8 @@ int main(int argc, char** argv) {
 	bool show_lowertiles = true;
 	bool show_uppertiles = true;
 	bool show_events = true;
+	bool ignore_conditions = false;
+	bool simulate_movement = false;
 	// ChipSet flags
 	uint8_t csflag[65536];
 	memset(csflag, 0, 65536);
@@ -240,14 +250,18 @@ int main(int argc, char** argv) {
 		} else if (arg == "-o") {
 			if (++i < argc)
 				output = argv[i];
-		} else if (arg == "--no-background") {
+		} else if (arg == "--no-background" || arg == "-nb") {
 			show_background = false;
-		} else if (arg == "--no-lowertiles") {
+		} else if (arg == "--no-lowertiles" || arg == "-nl") {
 			show_lowertiles = false;
-		} else if (arg == "--no-uppertiles") {
+		} else if (arg == "--no-uppertiles" || arg == "-nu") {
 			show_uppertiles = false;
-		} else if (arg == "--no-events") {
+		} else if (arg == "--no-events" || arg == "-ne") {
 			show_events = false;
+		} else if (arg == "--ignore-conditions" || arg == "-ic") {
+			ignore_conditions = true;
+		} else if (arg == "--simulate-movement" || arg == "-sm") {
+			simulate_movement = true;
 		} else {
 			input = arg;
 		}
@@ -334,7 +348,7 @@ int main(int argc, char** argv) {
 		std::stable_sort(map->events.begin(), map->events.end(), MapEventYSort);
 	}
 
-	RenderCore(output_img, chipset, csflag, map, show_background, show_lowertiles, show_uppertiles, show_events);
+	RenderCore(output_img, chipset, csflag, map, show_background, show_lowertiles, show_uppertiles, show_events, ignore_conditions, simulate_movement);
 
 	if (IMG_SavePNG(output_img, output.c_str()) < 0) {
 		std::cout << IMG_GetError() << std::endl;

@@ -62,5 +62,5 @@ License
 GENCACHE is free software under the ISC license. See the file COPYING for
 details.
 
-It uses the "JSON for Modern C++" header made by Niels Lohmann,
-available under MIT license at: https://github.com/nlohmann/json
+It includes "Dirent interface for Microsoft Visual Studio" by Toni Ronkko,
+available under MIT license at: https://github.com/tronkko/dirent

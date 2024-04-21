@@ -38,13 +38,21 @@ std::string basename(const std::string& in_file) {
 	return in_file.substr(pos + 1);
 }
 
-json parse_dir_recursive(const std::string& path, const int depth, const bool first = false) {
+// utf16 woes
 #ifdef _WIN32
-	struct _wdirent* dent;
+#  define MYOPENDIR(dir) _wopendir(reinterpret_cast<const wchar_t*>( \
+			icu::UnicodeString::fromUTF8(dir).getTerminatedBuffer()))
+#  define MYDIRENT struct _wdirent
+#  define MYREADDIR _wreaddir
+#  define MYCLOSEDIR _wclosedir
 #else
-	struct dirent* dent;
+#  define MYOPENDIR(dir) opendir(dir.c_str())
+#  define MYDIRENT struct dirent
+#  define MYREADDIR readdir
+#  define MYCLOSEDIR closedir
 #endif
 
+json parse_dir_recursive(const std::string& path, const int depth, const bool first = false) {
 	json r;
 	UErrorCode icu_error = U_ZERO_ERROR;
 
@@ -52,22 +60,14 @@ json parse_dir_recursive(const std::string& path, const int depth, const bool fi
 	if (depth == 0)
 		return r;
 
-#ifdef _WIN32
-	auto dir = _wopendir(reinterpret_cast<const wchar_t*>(
-			icu::UnicodeString::fromUTF8(path).getTerminatedBuffer()));
-#else
-	auto dir = opendir(path.c_str());
-#endif
+	auto dir = MYOPENDIR(path);
 	if (dir != nullptr) {
 		if (!first) {
 			r["_dirname"] = basename(path);
 		}
 
-#ifdef _WIN32
-		while ((dent = _wreaddir(dir)) != nullptr) {
-#else
-		while ((dent = readdir(dir)) != nullptr) {
-#endif
+		MYDIRENT* dent;
+		while ((dent = MYREADDIR(dir)) != nullptr) {
 			std::string dirname;
 			std::string lower_dirname;
 			icu::UnicodeString uni_lower_dirname;
@@ -130,11 +130,7 @@ json parse_dir_recursive(const std::string& path, const int depth, const bool fi
 			}
 		}
 	}
-#ifdef _WIN32
-	_wclosedir(dir);
-#else
-	closedir(dir);
-#endif
+	MYCLOSEDIR(dir);
 
 	return r;
 }

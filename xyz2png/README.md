@@ -14,8 +14,8 @@ Documentation is available at the documentation wiki: https://wiki.easyrpg.org
 
 ## Requirements
 
-- [libpng] for PNG writing support. (required)
 - [zlib] for XYZ file compressed structure reading. (required)
+- [libpng] for PNG writing support. (required)
 
 
 ## Daily builds

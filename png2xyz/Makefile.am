@@ -1,3 +1,6 @@
+EXTRA_DIST = README.md \
+	CMakeLists.txt CMakeModules/ConfigureWindows.cmake
+
 bin_PROGRAMS = png2xyz
 png2xyz_SOURCES = src/png2xyz.cpp
 png2xyz_CXXFLAGS = \
@@ -6,5 +9,3 @@ png2xyz_CXXFLAGS = \
 png2xyz_LDADD = \
 	$(PNG_LIBS) \
 	$(ZLIB_LIBS)
-
-EXTRA_DIST = README.md

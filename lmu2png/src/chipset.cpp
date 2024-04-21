@@ -39,7 +39,7 @@
             SDL_SetColorKey(ChipsetSurface, SDL_TRUE, ckey);
         }
         else {
-            ChipsetSurface = SDL_CreateRGBSurface(0, 32 * 16, 45 * 16, 32, 0xFF000000, 0x00FF0000, 0x0000FF00, 0x000000FF);
+            ChipsetSurface = SDL_CreateRGBSurfaceWithFormat(0, 32 * 16, 45 * 16, 32, SDL_PIXELFORMAT_RGBA32);
         }
 
 

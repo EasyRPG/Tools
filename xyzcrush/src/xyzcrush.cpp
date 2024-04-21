@@ -24,7 +24,7 @@
 #ifdef _WIN32
 # include <algorithm>
 #endif
-#include "zopfli/zlib_container.h"
+#include "zlib_container.h"
 
 # ifdef __MINGW64_VERSION_MAJOR
 int _dowildcard = -1; /* enable wildcard expansion for mingw-w64 */

@@ -1,35 +1,31 @@
+EXTRA_DIST = README.md \
+	CMakeLists.txt CMakeModules/ConfigureWindows.cmake \
+	src/external/zopfli/COPYING
+
 bin_PROGRAMS = xyzcrush
-
-xyzcrush_SOURCES = src/xyzcrush.cpp \
-	src/zopfli/zopfli.h \
-	src/zopfli/blocksplitter.c \
-	src/zopfli/blocksplitter.h \
-	src/zopfli/cache.c \
-	src/zopfli/cache.h \
-	src/zopfli/deflate.c \
-	src/zopfli/deflate.h \
-	src/zopfli/gzip_container.c \
-	src/zopfli/gzip_container.h \
-	src/zopfli/hash.c \
-	src/zopfli/hash.h \
-	src/zopfli/katajainen.c \
-	src/zopfli/katajainen.h \
-	src/zopfli/lz77.c \
-	src/zopfli/lz77.h \
-	src/zopfli/squeeze.c \
-	src/zopfli/squeeze.h \
-	src/zopfli/symbols.h \
-	src/zopfli/tree.c \
-	src/zopfli/tree.h \
-	src/zopfli/util.c \
-	src/zopfli/util.h \
-	src/zopfli/zlib_container.c \
-	src/zopfli/zlib_container.h \
-	src/zopfli/zopfli_lib.c
-
-xyzcrush_CXXFLAGS = \
-	$(ZLIB_CFLAGS)
-xyzcrush_LDADD = \
-	$(ZLIB_LIBS)
-
-EXTRA_DIST = README.md
+xyzcrush_SOURCES = \
+	src/xyzcrush.cpp \
+	src/external/zopfli/zopfli.h \
+	src/external/zopfli/blocksplitter.c \
+	src/external/zopfli/blocksplitter.h \
+	src/external/zopfli/cache.c \
+	src/external/zopfli/cache.h \
+	src/external/zopfli/deflate.c \
+	src/external/zopfli/deflate.h \
+	src/external/zopfli/hash.c \
+	src/external/zopfli/hash.h \
+	src/external/zopfli/katajainen.c \
+	src/external/zopfli/katajainen.h \
+	src/external/zopfli/lz77.c \
+	src/external/zopfli/lz77.h \
+	src/external/zopfli/squeeze.c \
+	src/external/zopfli/squeeze.h \
+	src/external/zopfli/symbols.h \
+	src/external/zopfli/tree.c \
+	src/external/zopfli/tree.h \
+	src/external/zopfli/util.c \
+	src/external/zopfli/util.h \
+	src/external/zopfli/zlib_container.c \
+	src/external/zopfli/zlib_container.h
+xyzcrush_CXXFLAGS = $(ZLIB_CFLAGS) -Isrc/external/zopfli
+xyzcrush_LDADD = $(ZLIB_LIBS)

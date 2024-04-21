@@ -1,30 +1,44 @@
-cmake_minimum_required(VERSION 3.7)
-project(xyzcrush VERSION 1.0 LANGUAGES C CXX)
+cmake_minimum_required(VERSION 3.16)
+project(xyzcrush VERSION 1.1 LANGUAGES C CXX
+	HOMEPAGE_URL "https://easyrpg.org/")
 
-set(CMAKE_MODULE_PATH APPEND "${CMAKE_CURRENT_SOURCE_DIR}/../Modules")
-
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
 include(ConfigureWindows)
 
 find_package(ZLIB REQUIRED)
 
-add_library(zopfli
-	src/zopfli/blocksplitter.c
-	src/zopfli/cache.c
-	src/zopfli/deflate.c
-	src/zopfli/gzip_container.c
-	src/zopfli/hash.c
-	src/zopfli/katajainen.c
-	src/zopfli/lz77.c
-	src/zopfli/squeeze.c
-	src/zopfli/tree.c
-	src/zopfli/util.c
-	src/zopfli/zlib_container.c
-	src/zopfli/zopfli_lib.c)
-
+set(zopfli_dir src/external/zopfli)
+add_library(zopfli STATIC
+	${zopfli_dir}/zopfli.h
+	${zopfli_dir}/blocksplitter.h
+	${zopfli_dir}/blocksplitter.c
+	${zopfli_dir}/cache.h
+	${zopfli_dir}/cache.c
+	${zopfli_dir}/deflate.h
+	${zopfli_dir}/deflate.c
+	${zopfli_dir}/hash.h
+	${zopfli_dir}/hash.c
+	${zopfli_dir}/katajainen.h
+	${zopfli_dir}/katajainen.c
+	${zopfli_dir}/lz77.h
+	${zopfli_dir}/lz77.c
+	${zopfli_dir}/squeeze.h
+	${zopfli_dir}/squeeze.c
+	${zopfli_dir}/symbols.h
+	${zopfli_dir}/tree.h
+	${zopfli_dir}/tree.c
+	${zopfli_dir}/util.h
+	${zopfli_dir}/util.c
+	${zopfli_dir}/zlib_container.h
+	${zopfli_dir}/zlib_container.c)
+target_include_directories(zopfli INTERFACE ${zopfli_dir})
 set_target_properties(zopfli PROPERTIES LINKER_LANGUAGE CXX)
 
 add_executable(xyzcrush src/xyzcrush.cpp)
-
+target_compile_definitions(xyzcrush PRIVATE
+	PACKAGE_VERSION="${PROJECT_VERSION}"
+	PACKAGE_BUGREPORT="https://github.com/EasyRPG/Tools/issues"
+	PACKAGE_URL="${PROJECT_HOMEPAGE_URL}")
 target_link_libraries(xyzcrush zopfli ZLIB::ZLIB)
 
 include(GNUInstallDirs)

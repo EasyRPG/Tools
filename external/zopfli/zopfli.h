@@ -66,27 +66,6 @@ typedef struct ZopfliOptions {
 /* Initializes options with default values. */
 void ZopfliInitOptions(ZopfliOptions* options);
 
-/* Output format */
-typedef enum {
-  ZOPFLI_FORMAT_GZIP,
-  ZOPFLI_FORMAT_ZLIB,
-  ZOPFLI_FORMAT_DEFLATE
-} ZopfliFormat;
-
-/*
-Compresses according to the given output format and appends the result to the
-output.
-
-options: global program options
-output_type: the output format to use
-out: pointer to the dynamic output array to which the result is appended. Must
-  be freed after use
-outsize: pointer to the dynamic output array size
-*/
-void ZopfliCompress(const ZopfliOptions* options, ZopfliFormat output_type,
-                    const unsigned char* in, size_t insize,
-                    unsigned char** out, size_t* outsize);
-
 #ifdef __cplusplus
 }  // extern "C"
 #endif

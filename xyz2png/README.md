@@ -1,49 +1,37 @@
-XYZ2PNG
-=======
+# XYZ2PNG
 
 XYZ2PNG is a small tool to convert RPG Maker 2000 and 2003 XYZ image file
 format into PNG images.
 
-XYZ2PNG is part of the EasyRPG Project.
-More information is available at the project website:
-
-https://easyrpg.org/
+XYZ2PNG is part of the EasyRPG Project. More information is available
+at the project website: https://easyrpg.org/
 
 
-Documentation
--------------
+## Documentation
 
-Documentation is available at the documentation wiki:
-
-https://wiki.easyrpg.org/
+Documentation is available at the documentation wiki: https://wiki.easyrpg.org
 
 
-Requirements
-------------
+## Requirements
 
- * libpng
- * zlib
-
-
-Daily builds
-------------
-
-Up to date binaries for assorted platforms are available at:
-
-https://ci.easyrpg.org/
+- [libpng] for PNG writing support. (required)
+- [zlib] for XYZ file compressed structure reading. (required)
 
 
-Source code
------------
+## Daily builds
 
-XYZ2PNG development is hosted by GitHub, project files are available in Git
-repositories.
+Up to date binaries for various systems are available at https://ci.easyrpg.org
+
+
+## Source code
+
+XYZ2PNG development is hosted by GitHub, project files are available
+in this git repository:
 
 https://github.com/EasyRPG/Tools
 
 
-Building
---------
+## Building
 
 XYZ2PNG uses Autotools:
 
@@ -56,8 +44,12 @@ You may tweak build parameters and environment variables, run
 `./configure --help` for reference.
 
 
-License
--------
+## License
 
-XYZ2PNG is free software under the GNU General Public License Version 3. See
-the file COPYING for details.
+XYZ2PNG is Free/Libre Open Source Software, released under the MIT License.
+See the file [COPYING] for copying conditions.
+
+
+[zlib]: https://zlib.net
+[libpng]: http://libpng.org/pub/png/libpng.html
+[COPYING]: COPYING

@@ -18,7 +18,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
-#include <fstream>
+#include <lcf/reader_util.h>
 #include <string>
 #include <algorithm>
 #include <SDL_image.h>
@@ -29,6 +29,12 @@
 #include <lcf/rpg/chipset.h>
 #include "chipset.h"
 #include "sdlxyz.h"
+
+#ifdef _WIN32
+#  include <fstream>
+#else
+#  include <filesystem>
+#endif
 
 // prevent SDL main rename
 #undef main
@@ -50,9 +56,39 @@ std::string GetFileDirectory (const std::string& file) {
 	return found == std::string::npos ? "./" : file.substr(0,found + 1);
 }
 
-bool Exists(const std::string& filename) {
-    std::ifstream infile(filename.c_str());
-    return infile.good();
+bool Find(std::string& filename) {
+#ifdef _WIN32
+	std::ifstream infile(filename.c_str());
+	return infile.good();
+#else
+	namespace fs = std::filesystem;
+
+	fs::path fpath(filename);
+
+	if (!fs::exists(fpath)) {
+		// Case insensitive search
+		fs::path fdir = fpath.parent_path();
+		if (!fs::is_directory(fdir)) {
+			return false;
+		}
+
+		std::string fname_lc = fpath.filename();
+		fname_lc = lcf::ReaderUtil::Normalize(fname_lc);
+
+		for (auto const& entry : fs::directory_iterator(fdir)) {
+			std::string name_lc = entry.path().filename();
+			name_lc = lcf::ReaderUtil::Normalize(name_lc);
+
+			if (fname_lc == name_lc) {
+				fpath = entry.path();
+				filename = fpath;
+				break;
+			}
+		}
+	}
+
+	return fs::is_regular_file(fpath);
+#endif
 }
 
 std::string path;
@@ -71,11 +107,13 @@ std::string FindResource(const std::string& folder, const std::string& base_name
 
 	for (const auto& dir : dirs) {
 		for (const auto& ext : {".png", ".bmp", ".xyz"}) {
-			if (Exists(dir + "/" + folder + "/" + base_name + ext))
-				return dir + "/" + folder + "/" + base_name + ext;
+			std::string outfile = dir + "/" + folder + "/" + base_name + ext;
+			if (Find(outfile)) {
+				return outfile;
+			}
 		}
 	}
-	return "";
+	return {};
 }
 
 SDL_Surface* LoadImage(const char* image_path, bool transparent = false) {
@@ -247,7 +285,7 @@ int main(int argc, char** argv) {
 		exit(EXIT_FAILURE);
 	}
 
-	if (!Exists(input)) {
+	if (!Find(input)) {
 		std::cout << "Input map file " << input << " can't be found." << std::endl;
 		exit(EXIT_FAILURE);
 	}

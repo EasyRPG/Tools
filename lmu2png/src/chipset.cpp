@@ -28,14 +28,20 @@
     bool stChipset::GenerateFromSurface(SDL_Surface * Surface)
     {
         // Set base surface, used for generating the tileset
-        BaseSurface     = Surface;
-        ChipsetSurface  = SDL_CreateRGBSurface(0, 32 * 16, 45 * 16, 8, 0, 0, 0, 0);
+        BaseSurface = Surface;
+        if (BaseSurface->format->palette) {
+            ChipsetSurface = SDL_CreateRGBSurface(0, 32 * 16, 45 * 16, 8, 0, 0, 0, 0);
 
-        // Copy pallete and Color Key
-        SDL_SetSurfacePalette(ChipsetSurface, Surface->format->palette);
-        uint32_t ckey;
-        SDL_GetColorKey(Surface, &ckey);
-        SDL_SetColorKey(ChipsetSurface, SDL_TRUE, ckey);
+            // Copy pallete and Color Key
+            SDL_SetSurfacePalette(ChipsetSurface, Surface->format->palette);
+            uint32_t ckey;
+            SDL_GetColorKey(Surface, &ckey);
+            SDL_SetColorKey(ChipsetSurface, SDL_TRUE, ckey);
+        }
+        else {
+            ChipsetSurface = SDL_CreateRGBSurfaceWithFormat(0, 32 * 16, 45 * 16, 32, SDL_PIXELFORMAT_RGBA32);
+        }
+
 
         int CurrentTile = 0;
 

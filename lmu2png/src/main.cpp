@@ -21,7 +21,6 @@
 #include <lcf/reader_util.h>
 #include <string>
 #include <algorithm>
-#include <filesystem>
 #include <SDL_image.h>
 #include <lcf/ldb/reader.h>
 #include <lcf/lmu/reader.h>
@@ -30,6 +29,12 @@
 #include <lcf/rpg/chipset.h>
 #include "chipset.h"
 #include "sdlxyz.h"
+
+#ifdef _WIN32
+#  include <fstream>
+#else
+#  include <filesystem>
+#endif
 
 // prevent SDL main rename
 #undef main
@@ -52,6 +57,10 @@ std::string GetFileDirectory (const std::string& file) {
 }
 
 bool Find(std::string& filename) {
+#ifdef _WIN32
+	std::ifstream infile(filename.c_str());
+	return infile.good();
+#else
 	namespace fs = std::filesystem;
 
 	fs::path fpath(filename);
@@ -79,6 +88,7 @@ bool Find(std::string& filename) {
 	}
 
 	return fs::is_regular_file(fpath);
+#endif
 }
 
 std::string path;

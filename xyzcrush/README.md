@@ -1,48 +1,36 @@
-XYZCrush
-========
+# XYZCrush
 
 XYZCrush is a small tool to recompress RPG Maker 2000 and 2003 XYZ image file
 format into smaller files.
 
-XYZCrush part of the EasyRPG Project.
-More information is available at the project website:
-
-https://easyrpg.org/
+XYZCrush is part of the EasyRPG Project. More information is available
+at the project website: https://easyrpg.org/
 
 
-Documentation
--------------
+## Documentation
 
-Documentation is available at the documentation wiki:
-
-https://wiki.easyrpg.org/
+Documentation is available at the documentation wiki: https://wiki.easyrpg.org
 
 
-Requirements
-------------
+## Requirements
 
- * zlib
-
-
-Daily builds
-------------
-
-Up to date binaries for assorted platforms are available at:
-
-https://ci.easyrpg.org/
+- [zlib] for XYZ file compressed structure reading. (required)
 
 
-Source code
------------
+## Daily builds
 
-XYZCrush development is hosted by GitHub, project files are available in Git
-repositories.
+Up to date binaries for various systems are available at https://ci.easyrpg.org
+
+
+## Source code
+
+XYZCrush development is hosted by GitHub, project files are available
+in this git repository:
 
 https://github.com/EasyRPG/Tools
 
 
-Building
---------
+## Building
 
 XYZCrush uses Autotools:
 
@@ -55,11 +43,21 @@ You may tweak build parameters and environment variables, run
 `./configure --help` for reference.
 
 
-License
--------
+## License
 
-XYZCrush is free software under the GNU General Public License Version 3.
-See the file COPYING for details.
+XYZCrush is Free/Libre Open Source Software, released under the MIT License.
+See the file [COPYING] for copying conditions.
 
-XYZCrush includes a copy of the Zopfli source code.
-Zopfli is free software under the Apache 2.0 license.
+
+### 3rd party software
+
+XYZCrush includes code of the following 3rd party software:
+
+- [zopfli] under the Apache 2.0 license.
+
+See the source code comment headers for license details.
+
+
+[zlib]: https://zlib.net
+[COPYING]: COPYING
+[zopfli]: https://github.com/google/zopfli

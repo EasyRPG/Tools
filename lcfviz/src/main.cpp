@@ -24,9 +24,9 @@
 #include "utils.h"
 
 #ifdef _WIN32
-#include "dirent_win.h"
+#  include <dirent_win.h>
 #else
-#include <dirent.h>
+#  include <dirent.h>
 #endif
 
 #define DATABASE_FILE "rpg_rt.ldb"

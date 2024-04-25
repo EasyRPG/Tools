@@ -1,24 +1,24 @@
-cmake_minimum_required(VERSION 3.7)
-project(lcfviz VERSION 1.0 LANGUAGES CXX)
+cmake_minimum_required(VERSION 3.16)
+project(lcfviz VERSION 1.1 LANGUAGES CXX
+	HOMEPAGE_URL "https://easyrpg.org/")
 
-# C++17 is required
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS ON)
-
-set(CMAKE_MODULE_PATH APPEND "${CMAKE_CURRENT_SOURCE_DIR}/../Modules")
-
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
 include(ConfigureWindows)
 
 find_package(liblcf REQUIRED)
 
+set(dirent_dir src/external/dirent_win)
 add_executable(lcfviz
-	src/dirent_win.h
 	src/main.cpp
 	src/utils.cpp
 	src/utils.h
-)
-
+	${dirent_dir}/dirent_win.h)
+target_compile_features(lcfviz PRIVATE cxx_std_17)
+target_include_directories(lcfviz PRIVATE ${dirent_dir})
+target_compile_definitions(lcfviz PRIVATE
+	PACKAGE_VERSION="${PROJECT_VERSION}"
+	PACKAGE_BUGREPORT="https://github.com/EasyRPG/Tools/issues"
+	PACKAGE_URL="${PROJECT_HOMEPAGE_URL}")
 target_link_libraries(lcfviz liblcf::liblcf)
 
 include(GNUInstallDirs)

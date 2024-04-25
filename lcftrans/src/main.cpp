@@ -10,6 +10,7 @@
 #include <lcf/encoder.h>
 #include <lcf/reader_util.h>
 #include <lcf/ldb/reader.h>
+#include <argparse.hpp>
 
 #include "translation.h"
 #include "utils.h"
@@ -29,87 +30,70 @@ void DumpLmu(const std::string& filename);
 void DumpLmt(const std::string& filename);
 int MatchMode();
 
-static int print_help(char** argv) {
-	std::cerr << "lcftrans - Translate RPG Maker 2000/2003 projects\n"; //                        | <- EOL
-	std::cerr << "Usage: " << argv[0] << " [OPTION...] DIRECTORY [ENCODING]\n";
-	std::cerr << "Required options (one of):\n";
-	std::cerr << "  -c, --create        Create a new translation\n";
-	std::cerr << "  -u, --update        Update an existing translation\n";
-	std::cerr << "  -m, --match MDIR    Match the translations in MDIR and DIRECTORY. When matched\n";
-	std::cerr << "                      the original in MDIR becomes the translation of DIRECTORY.\n";
-	std::cerr << "                      Used to generate translations from games where the trans-\n";
-	std::cerr << "                      lation is hardcoded in the game files.\n";
-	std::cerr << "\n";
-	std::cerr << "Optional options:\n";
-	std::cerr << "  -h, --help          This usage message\n";
-	std::cerr << "  -o, --output        OUTDIR Output directory (default: working directory)\n";
-	std::cerr << "\n";
-	std::cerr << "When not specified the encoding is read from RPG_RT.ini or auto-detected\n";
-	return 2;
+namespace {
+	/* config */
+	std::string encoding, outdir = ".", merge_indir, indir;
+	std::vector<std::pair<std::string, std::string>> source_files;
+	std::vector<std::pair<std::string, std::string>> outdir_files;
+	std::string ini_file, database_file;
+	bool create, update, match = false;
 }
 
-std::string encoding;
-std::string outdir = ".";
-std::string merge_indir;
-std::string indir;
-std::vector<std::pair<std::string, std::string>> source_files;
-std::vector<std::pair<std::string, std::string>> outdir_files;
-std::string ini_file;
-std::string database_file;
-bool create = false;
-bool update = false;
-bool match = false;
-
 int main(int argc, char** argv) {
-	if (argc <= 1) {
-		return print_help(argv);
-	}
+	/* add usage and help messages */
+	argparse::ArgumentParser cli("lcftrans", PACKAGE_VERSION);
+	cli.set_usage_max_line_width(100);
+	cli.add_description("Translate RPG Maker 2000/2003 projects");
+	cli.add_epilog("Homepage " PACKAGE_URL " - Report bugs at: " PACKAGE_BUGREPORT);
 
 	/* parse command line arguments */
-	for (int i = 1; i < argc; ++i) {
-		std::string arg = argv[i];
+	cli.add_argument("DIRECTORY").store_into(indir).metavar("DIRECTORY")
+		.help("Game directory");
 
-		bool any_mode = create || update || match;
+	auto &group = cli.add_mutually_exclusive_group(true);
+	group.add_argument("-c", "--create").store_into(create)
+		.help("Create a new translation");
+	group.add_argument("-u", "--update").store_into(update)
+		.help("Update an existing translation");
+	group.add_argument("-m", "--match").metavar("MDIR")
+		.action([&](const auto &arg) { merge_indir = arg; match = true; })
+		.help("Match the translations in MDIR and DIRECTORY. When matched\n"
+			"the original in MDIR becomes the translation of DIRECTORY.\n"
+			"Used to generate translations from games where the trans-\n"
+			"lation is hardcoded in the game files.");
 
-		if ((arg == "--help") || (arg == "-h")) {
-			return print_help(argv);
-		} else if ((arg == "--output") || (arg == "-o")) {
-			if (i + 1 < argc) {
-				outdir = argv[i + 1];
-				++i;
-			}
-		} else if ((arg == "--create") || (arg == "-c")) {
-			if (any_mode) {
-				return print_help(argv);
-			}
-			create = true;
-		} else if ((arg == "--update") || (arg == "-u")) {
-			if (any_mode) {
-				return print_help(argv);
-			}
-			update = true;
-		} else if ((arg == "--merge") || (arg == "-m")) {
-			if (any_mode) {
-				return print_help(argv);
-			}
-			match = true;
-			if (i + 1 < argc) {
-				merge_indir = argv[i + 1];
-				++i;
-			} else {
-				return print_help(argv);
-			}
+	cli.add_argument("-e", "--encoding").store_into(encoding).metavar("ENC")
+		.help("When not specified, is read from RPG_RT.ini or auto-detected");
+	cli.add_argument("-o", "--output").store_into(outdir).metavar("OUTDIR")
+		.help("Output directory (default: working directory)");
+	// for old encoding argument
+	cli.add_argument("additional").remaining().hidden();
+
+	try {
+		cli.parse_args(argc, argv);
+	} catch (const std::exception& err) {
+		std::cerr << err.what() << "\n";
+		// print usage message
+		std::cerr << cli.usage() << "\n";
+		std::exit(EXIT_FAILURE);
+	}
+
+	// for old encoding argument
+	if (auto additional_args = cli.present<std::vector<std::string>>("additional")) {
+		if(additional_args.value().size() > 1) {
+			std::cerr << "Found additional, unrecognized arguments.\n";
+			std::cerr << cli.usage() << "\n";
+			std::exit(EXIT_FAILURE);
 		} else {
-			indir = arg;
-			if (i+1 < argc) {
-				encoding = argv[i+1];
-			}
-			break;
+			std::cerr << "Specifying ENCODING as last argument is deprecated, `-e ENC` is the replacement.\n";
+			encoding = additional_args.value()[0];
 		}
 	}
 
-	if (indir.empty() || (!update && !create && !match) || outdir == merge_indir) {
-		return print_help(argv);
+	if (outdir == merge_indir) {
+		std::cerr << "You need to specify a different output directory (-o).\n";
+		std::cerr << cli;
+		std::exit(EXIT_FAILURE);
 	}
 
 	auto full_path = [&](const auto& name) {
@@ -203,13 +187,13 @@ int main(int argc, char** argv) {
 		const auto& lname = s.second;
 
 		if (lname == DATABASE_FILE) {
-			std::cout << "Parsing Database " << name << std::endl;
+			std::cout << "Parsing Database " << name << "\n";
 			DumpLdb(full_path(name));
 		} else if (lname == MAPTREE_FILE) {
-			std::cout << "Parsing Maptree " << name << std::endl;
+			std::cout << "Parsing Maptree " << name << "\n";
 			DumpLmt(full_path(name));
 		} else if (Utils::HasExt(lname, ".lmu")) {
-			std::cout << "Parsing Map " << name << std::endl;
+			std::cout << "Parsing Map " << name << "\n";
 			DumpLmu(full_path(name));
 		}
 	}

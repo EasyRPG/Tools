@@ -7,14 +7,17 @@ include(ConfigureWindows)
 
 find_package(liblcf REQUIRED)
 
+set(argparse_dir src/external/argparse)
 set(dirent_dir src/external/dirent_win)
 add_executable(lcfviz
 	src/main.cpp
 	src/utils.cpp
 	src/utils.h
+	${argparse_dir}/argparse.hpp
 	${dirent_dir}/dirent_win.h)
 target_compile_features(lcfviz PRIVATE cxx_std_17)
-target_include_directories(lcfviz PRIVATE ${dirent_dir})
+target_include_directories(lcfviz PRIVATE
+	${argparse_dir} ${dirent_dir})
 target_compile_definitions(lcfviz PRIVATE
 	PACKAGE_VERSION="${PROJECT_VERSION}"
 	PACKAGE_BUGREPORT="https://github.com/EasyRPG/Tools/issues"

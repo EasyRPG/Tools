@@ -14,6 +14,7 @@
 #include <functional>
 #include <iostream>
 #include <unordered_map>
+#include <argparse.hpp>
 #include <lcf/encoder.h>
 #include <lcf/reader_util.h>
 #include <lcf/lmt/reader.h>
@@ -35,6 +36,12 @@
 
 void ParseLmt(const std::string& filename);
 
+const std::string help_epilog = R"(Example usage:
+  lcfviz YOURGAME | dot -Goverlap=false -Gsplines=true -Tpng -o graph.png
+Creates an overlap-free, directed graph (for huge graphs use sfdp, not dot)
+
+)" "Homepage " PACKAGE_URL " - Report bugs at: " PACKAGE_BUGREPORT;
+
 static int print_help(char** argv) {
 	std::cerr << "lcfviz - Creates a dot file from a map tree by scanning the map for teleports.\n";
 	std::cerr << "Usage: " << argv[0] << " [OPTION...] DIRECTORY [ENCODING]\n";
@@ -54,53 +61,68 @@ static int print_help(char** argv) {
 	return 2;
 }
 
-std::string encoding;
-std::string indir;
-std::vector<std::pair<std::string, std::string>> source_files;
-std::vector<std::pair<int, int>> targets_per_map;
-std::vector<std::pair<int, std::string>> maps;
+namespace {
+	/* config */
+	std::string encoding, indir;
+	std::vector<std::pair<std::string, std::string>> source_files;
+	std::vector<std::pair<int, int>> targets_per_map;
+	std::vector<std::pair<int, std::string>> maps;
 
-int depth_limit = -1;
-std::string outfile;
-bool remove_unreachable = false;
-int start_map_id = -1;
+	int depth_limit = -1;
+	std::string outfile;
+	bool remove_unreachable = false;
+	int start_map_id = -1;
+}
 
 int main(int argc, char** argv) {
-	/* parse command line arguments */
-	for (int i = 1; i < argc; ++i) {
-		std::string arg = argv[i];
+	/*add usage and help messages */
+	argparse::ArgumentParser cli("lcfviz", PACKAGE_VERSION);
+	cli.set_usage_max_line_width(100);
+	cli.add_description("Creates a dot file from a map tree by scanning the map for teleports.");
+	cli.add_epilog(help_epilog);
 
-		if ((arg == "--help") || (arg == "-h")) {
-			return print_help(argv);
-		} else if ((arg == "--depth") || (arg == "-d")) {
-			if (i + 1 < argc) {
-				depth_limit = atoi(argv[i + 1]);
-				++i;
-				remove_unreachable = true;
-			}
-		} else if ((arg == "--output") || (arg == "-o")) {
-			if (i+1 < argc) {
-				outfile = argv[i+1];
-				++i;
-			}
-		} else if ((arg == "--remove") || (arg == "-r")) {
-			remove_unreachable = true;
-		} else if ((arg == "--start") || (arg == "-s")) {
-			if (i+1 < argc) {
-				start_map_id = atoi(argv[i+1]);
-				++i;
-			}
-		} else {
-			indir = arg;
-			if (i+1 < argc) {
-				encoding = argv[i+1];
-			}
-			break;
-		}
+	/* parse command line arguments */
+	cli.add_argument("DIRECTORY").default_value(".").store_into(indir)
+		.help("Game directory").metavar("DIRECTORY");
+	cli.add_argument("-d", "--depth").store_into(depth_limit).scan<'i', int>()
+		.help("Maximal depth from the start node (default: no limit).\n"
+				"Enables unreachable node detection (-r)").metavar("DEPTH");
+	cli.add_argument("-o", "--output").store_into(outfile).metavar("FILE")
+		.help("Output file (default: stdout)");
+	cli.add_argument("-e", "--encoding").store_into(encoding).metavar("ENC")
+		.help("When not specified, is read from RPG_RT.ini or auto-detected");
+	cli.add_argument("-r", "--remove").store_into(remove_unreachable)
+		.help("Remove nodes that are unreachable from the start node");
+	cli.add_argument("-s", "--start").store_into(start_map_id).scan<'i', int>()
+		.help("Initial node of the graph (default: start party position)")
+		.metavar("ID");
+	// for old encoding argument
+	cli.add_argument("additional").remaining().hidden();
+
+	try {
+		cli.parse_args(argc, argv);
+	} catch (const std::exception& err) {
+		std::cerr << err.what() << "\n";
+		// print usage message
+		std::cerr << cli.usage() << "\n";
+		std::exit(EXIT_FAILURE);
 	}
 
-	if (indir.empty()) {
-		indir = ".";
+	// depth arg also sets remove option
+	if(cli.is_used("--depth")) {
+		remove_unreachable = true;
+	}
+
+	// for old encoding argument
+	if (auto additional_args = cli.present<std::vector<std::string>>("additional")) {
+		if(additional_args.value().size() > 1) {
+			std::cerr << "Found additional, unrecognized arguments.\n";
+			std::cerr << cli.usage() << "\n";
+			std::exit(EXIT_FAILURE);
+		} else {
+			std::cerr << "Specifying ENCODING as last argument is deprecated, `-e ENC` is the replacement.\n";
+			encoding = additional_args.value()[0];
+		}
 	}
 
 	auto full_path = [&](const auto& name) {
@@ -171,7 +193,7 @@ int main(int argc, char** argv) {
 		const auto& lname = s.second;
 
 		if (lname == MAPTREE_FILE) {
-			std::cerr << "Parsing Maptree " << name << std::endl;
+			std::cerr << "Parsing Maptree " << name << "\n";
 			ParseLmt(full_path(name));
 			parsed_lmt = true;
 		}

@@ -32,15 +32,25 @@ https://github.com/EasyRPG/Tools
 
 ## Building
 
-XYZCrush uses Autotools:
+### Autotools:
 
-    ./bootstrap (only needed if using a git checkout)
-    ./configure
-    make
-    make install (optionally)
+```shell
+./bootstrap # (only needed if using a git checkout)
+./configure
+make
+make install # (optionally)
+```
 
 You may tweak build parameters and environment variables, run
 `./configure --help` for reference.
+
+### CMake
+
+```shell
+cmake -B builddir
+cmake --build builddir
+cmake --install builddir # (optionally)
+```
 
 
 ## License

@@ -1,4 +1,5 @@
-AC_INIT([gencache],[1.1],[https://github.com/EasyRPG/Tools/issues],[gencache],[https://easyrpg.org/])
+AC_INIT([gencache],[1.2],
+	[https://github.com/EasyRPG/Tools/issues],[gencache],[https://easyrpg.org/])
 
 AC_CONFIG_AUX_DIR([.])
 AM_INIT_AUTOMAKE([foreign subdir-objects -Wall dist-xz])

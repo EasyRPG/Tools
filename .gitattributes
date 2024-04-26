@@ -1,0 +1,11 @@
+*       text=auto
+*.cpp   text
+*.h     text linguist-language=C++
+*.md    text
+*.cmake text
+*.txt   text
+*.sh    text
+*.ac    text
+*.am    text
+
+external/* -diff linguist-vendored

@@ -1,4 +1,5 @@
-AC_INIT([easyrpg-tools],[1.0],[https://github.com/EasyRPG/Tools/issues],[easyrpg-tools],[https://easyrpg.org/])
+AC_INIT([easyrpg-tools],[1.1],
+	[https://github.com/EasyRPG/Tools/issues],[easyrpg-tools],[https://easyrpg.org/])
 
 AC_CONFIG_AUX_DIR([.])
 AM_INIT_AUTOMAKE([foreign subdir-objects -Wall])

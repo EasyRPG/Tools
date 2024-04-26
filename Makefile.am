@@ -1,3 +1,5 @@
+EXTRA_DIST = README.md CMakeLists.txt Modules
+
 SUBDIRS = 
 
 if ENABLE_LMU2PNG
@@ -27,5 +29,3 @@ endif
 if ENABLE_LCFVIZ
 SUBDIRS += lcfviz
 endif
-
-EXTRA_DIST = README.md

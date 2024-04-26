@@ -51,10 +51,9 @@ std::string GetFileDirectory (const std::string& file) {
 }
 
 bool Exists(const std::string& filename) {
-    std::ifstream infile(filename.c_str());
+	std::ifstream infile(filename.c_str());
     return infile.good();
 }
-
 std::string path;
 
 std::string FindResource(const std::string& folder, const std::string& base_name) {
@@ -154,19 +153,31 @@ void DrawEvents(SDL_Surface* output_img, stChipset * gen, std::unique_ptr<lcf::r
 }
 
 void RenderCore(SDL_Surface* output_img, std::string chipset, uint8_t * csflag, std::unique_ptr<lcf::rpg::Map> & map, int show_background, int show_lowertiles, int show_uppertiles, int show_events) {
-	SDL_Surface* chipset_img = LoadImage(chipset.c_str(), true);
+	SDL_Surface* chipset_img;
+	if (!chipset.empty()) {
+		chipset_img = LoadImage(chipset.c_str(), true);
+	} else {
+		chipset_img = SDL_CreateRGBSurfaceWithFormat(0, 32 * 16, 45 * 16, 32, SDL_PIXELFORMAT_RGBA32);
+	}
 
 	stChipset gen;
 	gen.GenerateFromSurface(chipset_img);
 
 	// Draw parallax background
-	if (show_background && !map->parallax_name.empty()) {
+	if (show_background) {
+		
 		std::string pname = lcf::ToString(map->parallax_name);
 		std::string background(FindResource("Panorama", pname));
-		if (background.empty()) {
+		if (background.empty() && !map->parallax_name.empty()) {
 			std::cout << "Can't find parallax background " << map->parallax_name << std::endl;
 		} else {
-			SDL_Surface* background_img(LoadImage(background.c_str()));
+			SDL_Surface* background_img;
+			if (map->parallax_name.empty()) {
+				background_img = SDL_CreateRGBSurface(0, 1, 1, 24, 0, 0, 0, 0);
+				SDL_FillRect(background_img, 0, 0);
+			} else {
+				background_img = (LoadImage(background.c_str()));
+			}
 			SDL_Rect dst_rect = background_img->clip_rect;
 			// Fill screen with copies of the background
 			for (dst_rect.x = 0; dst_rect.x < output_img->w; dst_rect.x += background_img->w) {
@@ -284,7 +295,7 @@ int main(int argc, char** argv) {
 		std::string chipset_base(cs.chipset_name);
 
 		chipset = FindResource("ChipSet", chipset_base);
-		if (chipset.empty()) {
+		if (chipset.empty() && !chipset_base.empty()) {
 			std::cout << "Chipset " << chipset_base << " can't be found." << std::endl;
 			exit(EXIT_FAILURE);
 		}

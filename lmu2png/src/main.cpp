@@ -21,6 +21,7 @@
 #include <fstream>
 #include <string>
 #include <algorithm>
+#include <argparse.hpp>
 #include <SDL_image.h>
 #include <lcf/ldb/reader.h>
 #include <lcf/lmu/reader.h>
@@ -33,32 +34,14 @@
 // prevent SDL main rename
 #undef main
 
-const std::string usage = R"(Usage: lmu2png map.lmu [options]
-
-	-h, --help                      Display this help message
-
-	-d database.ldb                 Specify the database file to use; 
-	                                if unspecified, it will use the database file
-	                                in the same folder as the map
-	-c chipset.png                  Specify the chipset file to use; 
-	                                if unspecified, it will be read from the 
-	                                database
-	-e encoding                     Specify the project's encoding
-	                                (defaults to autodetection)
-	-o output.png                   Set the output filepath
-	                                (defaults to the map's directory)
-
-	--no-background, --nb           Skip drawing the parallax background
-	--no-lowertiles, --nl           Skip drawing lower layer tiles
-	--no-uppertiles, --nu           Skip drawing upper layer tiles
-	--no-events, --ne               Skip drawing events
-	--ignore-conditions, --ic       Always draw the first page of the event 
-	                                instead of finding the first page with no
-	                                conditions
-	--simulate-movement, --sm       For event pages with certain animation 
-	                                types, draw the middle frame instead of 
-	                                the frame specified for the page
-)";
+using sOpts = struct {
+	bool no_background;
+	bool no_lowertiles;
+	bool no_uppertiles;
+	bool no_events;
+	bool ignore_conditions;
+	bool simulate_movement;
+};
 
 std::string GetFileDirectory (const std::string& file) {
 	size_t found = file.find_last_of("/\\");
@@ -112,18 +95,18 @@ SDL_Surface* LoadImage(const char* image_path, bool transparent = false) {
 	return image;
 }
 
-void DrawTiles(SDL_Surface* output_img, stChipset * gen, uint8_t * csflag, std::unique_ptr<lcf::rpg::Map> & map, int show_lowertiles, int show_uppertiles, int flaglayer) {
+void DrawTiles(SDL_Surface* output_img, stChipset * gen, uint8_t * csflag, std::unique_ptr<lcf::rpg::Map> & map, sOpts opts, int flaglayer) {
 	for (int y = 0; y < map->height; ++y) {
 		for (int x = 0; x < map->width; ++x) {
 			// Different logic between these.
 			int tindex = x + y * map->width;
-			if (show_lowertiles) {
+			if (!opts.no_lowertiles) {
 				uint16_t tid = map->lower_layer[tindex];
 				int l = (csflag[tid] & 0x30) ? 1 : 0;
 				if (l == flaglayer)
 					gen->RenderTile(output_img, x*16, y*16, map->lower_layer[x+y*map->width], 0);
 			}
-			if (show_uppertiles) {
+			if (!opts.no_uppertiles) {
 				uint16_t tid = map->upper_layer[tindex];
 				int l = (csflag[tid] & 0x10) ? 1 : 0;
 				if (l == flaglayer)
@@ -133,11 +116,11 @@ void DrawTiles(SDL_Surface* output_img, stChipset * gen, uint8_t * csflag, std::
 	}
 }
 
-void DrawEvents(SDL_Surface* output_img, stChipset * gen, std::unique_ptr<lcf::rpg::Map> & map, int layer, bool ignore_conditions, bool simulate_movement) {
+void DrawEvents(SDL_Surface* output_img, stChipset * gen, std::unique_ptr<lcf::rpg::Map> & map, int layer, sOpts opts) {
 	for (const lcf::rpg::Event& ev : map->events) {
 		const lcf::rpg::EventPage* evp = nullptr;
 		// Find highest page without conditions
-		if (ignore_conditions)
+		if (opts.ignore_conditions)
 			evp = &ev.pages[0];
 		else {
 			for (int i = 0; i < (int)ev.pages.size(); ++i) {
@@ -163,20 +146,21 @@ void DrawEvents(SDL_Surface* output_img, stChipset * gen, std::unique_ptr<lcf::r
 			}
 
 			SDL_Surface* charset_img(LoadImage(charset.c_str(), true));
-			SDL_Rect src_rect;
-			if (simulate_movement && (evp->animation_type == 0 || evp->animation_type == 2 || evp->animation_type == 6))
-				src_rect = {(evp->character_index % 4) * 72 + 24,
-					 (evp->character_index / 4) * 128 + evp->character_direction * 32, 24, 32};
-			else
-				src_rect = {(evp->character_index % 4) * 72 + evp->character_pattern * 24,
-					 (evp->character_index / 4) * 128 + evp->character_direction * 32, 24, 32};
+			int frame = evp->character_pattern;
+			if (opts.simulate_movement &&
+				(evp->animation_type == 0 || evp->animation_type == 2 || evp->animation_type == 6)) {
+				// middle frame
+				frame = 1;
+			}
+			SDL_Rect src_rect = {(evp->character_index % 4) * 72 + frame * 24,
+				(evp->character_index / 4) * 128 + evp->character_direction * 32, 24, 32};
 			SDL_Rect dst_rect {ev.x * 16 - 4, ev.y * 16 - 16, 16, 32};
 			SDL_BlitSurface(charset_img, &src_rect, output_img, &dst_rect);
 		}
 	}
 }
 
-void RenderCore(SDL_Surface* output_img, std::string chipset, uint8_t * csflag, std::unique_ptr<lcf::rpg::Map> & map, int show_background, int show_lowertiles, int show_uppertiles, int show_events, bool ignore_conditions, bool simulate_movement) {
+void RenderCore(SDL_Surface* output_img, std::string chipset, uint8_t * csflag, std::unique_ptr<lcf::rpg::Map> & map, sOpts opts) {
 	SDL_Surface* chipset_img;
 	if (!chipset.empty()) {
 		chipset_img = LoadImage(chipset.c_str(), true);
@@ -188,8 +172,7 @@ void RenderCore(SDL_Surface* output_img, std::string chipset, uint8_t * csflag, 
 	gen.GenerateFromSurface(chipset_img);
 
 	// Draw parallax background
-	if (show_background) {
-		
+	if (!opts.no_background) {
 		std::string pname = lcf::ToString(map->parallax_name);
 		std::string background(FindResource("Panorama", pname));
 		if (background.empty() && !map->parallax_name.empty()) {
@@ -213,85 +196,81 @@ void RenderCore(SDL_Surface* output_img, std::string chipset, uint8_t * csflag, 
 	}
 
 	// Draw below tile layer
-	if (show_lowertiles || show_uppertiles)
-		DrawTiles(output_img, &gen, csflag, map, show_lowertiles, show_uppertiles, 0);
+	if (!(opts.no_lowertiles && opts.no_uppertiles))
+		DrawTiles(output_img, &gen, csflag, map, opts, 0);
 	// Draw below-player & player-level events
-	if (show_events) {
-		DrawEvents(output_img, &gen, map, 0, ignore_conditions, simulate_movement);
-		DrawEvents(output_img, &gen, map, 1, ignore_conditions, simulate_movement);
+	if (!opts.no_events) {
+		DrawEvents(output_img, &gen, map, 0, opts);
+		DrawEvents(output_img, &gen, map, 1, opts);
 	}
 	// Draw above tile layer
-	if (show_lowertiles || show_uppertiles)
-		DrawTiles(output_img, &gen, csflag, map, show_lowertiles, show_uppertiles, 1);
+	if (!(opts.no_lowertiles && opts.no_uppertiles))
+		DrawTiles(output_img, &gen, csflag, map, opts, 1);
 	// Draw events
-	if (show_events)
-		DrawEvents(output_img, &gen, map, 2, ignore_conditions, simulate_movement);
-}
-
-bool MapEventYSort(const lcf::rpg::Event& ev1, const lcf::rpg::Event& ev2) {
-	return ev1.y < ev2.y;
+	if (!opts.no_events)
+		DrawEvents(output_img, &gen, map, 2, opts);
 }
 
 int main(int argc, char** argv) {
-	std::string database;
-	std::string chipset;
-	std::string encoding;
-	std::string output;
-	std::string input;
-	bool show_background = true;
-	bool show_lowertiles = true;
-	bool show_uppertiles = true;
-	bool show_events = true;
-	bool ignore_conditions = false;
-	bool simulate_movement = false;
-	// ChipSet flags
-	uint8_t csflag[65536];
-	memset(csflag, 0, 65536);
+	sOpts opts = { 0 };
+	std::string database, chipset, encoding, output, input;
+
+	// add usage and help messages
+	argparse::ArgumentParser cli("lmu2png", PACKAGE_VERSION);
+	cli.set_usage_max_line_width(120);
+	cli.add_description("EasyRPG lmu2png - Render a map to PNG file");
+	cli.add_epilog("Homepage " PACKAGE_URL " - Report bugs at: " PACKAGE_BUGREPORT);
 
 	// Parse arguments
-	for (int i = 1; i < argc; ++i) {
-		std::string arg (argv[i]);
-		if (arg == "-h" || arg == "--help") {
-			std::cout << usage << std::endl;
-			exit(EXIT_SUCCESS);
-		} else if (arg == "-d") {
-			if (++i < argc)
-				database = argv[i];
-		} else if (arg == "-c") {
-			if (++i < argc)
-				chipset = argv[i];
-		} else if (arg == "-e") {
-			if (++i < argc)
-				encoding = argv[i];
-		} else if (arg == "-o") {
-			if (++i < argc)
-				output = argv[i];
-		} else if (arg == "--no-background" || arg == "--nb") {
-			show_background = false;
-		} else if (arg == "--no-lowertiles" || arg == "--nl") {
-			show_lowertiles = false;
-		} else if (arg == "--no-uppertiles" || arg == "--nu") {
-			show_uppertiles = false;
-		} else if (arg == "--no-events" || arg == "--ne") {
-			show_events = false;
-		} else if (arg == "--ignore-conditions" || arg == "--ic") {
-			ignore_conditions = true;
-		} else if (arg == "--simulate-movement" || arg == "--sm") {
-			simulate_movement = true;
-		} else {
-			input = arg;
-		}
-	}
+	cli.add_argument("mapfile").required().store_into(input)
+		.help("Map file to render")
+		.metavar("MapXXXX.lmu");
+	cli.add_argument("-e", "--encoding").store_into(encoding)
+		.help("Project encoding (defaults to autodetection)")
+		.metavar("ENC");
+	cli.add_argument("-d", "--database").store_into(database)
+		.help("Database file to use; if unspecified, uses the database file\n"
+			"in the map folder").metavar("LDB");
+	cli.add_argument("-c", "--chipset").store_into(chipset)
+		.help("Chipset file to use; if unspecified, will be read from\n"
+			"the database").metavar("IMG");
+	cli.add_argument("-o", "--output").store_into(output)
+		.help("Set the output filepath (defaults to map name)")
+		.metavar("PNG");
 
-	if (input.empty()) {
-		std::cout << usage << std::endl;
-		exit(EXIT_FAILURE);
+	cli.add_group("Graphic Options");
+	cli.add_argument("-B", "--no-background").store_into(opts.no_background)
+		.help("Do not draw the parallax background").flag();
+	cli.add_argument("-L", "--no-lowertiles").store_into(opts.no_lowertiles)
+		.help("Do not draw lower layer tiles").flag();
+	cli.add_argument("-U", "--no-uppertiles").store_into(opts.no_uppertiles)
+		.help("Do not draw upper layer tiles").flag();
+	cli.add_argument("-E", "--no-events").store_into(opts.no_events)
+		.help("Do not draw events").flag();
+	cli.add_argument("-C", "--ignore-conditions").store_into(opts.ignore_conditions)
+		.help("Always draw the first page of the event instead of finding\n"
+			"the first page with no conditions").flag();
+	cli.add_argument("-M", "--simulate-movement").store_into(opts.simulate_movement)
+		.help("For event pages with certain animation types, draw the middle\n"
+			"frame instead of the frame specified for the page").flag();
+
+	try {
+		cli.parse_args(argc, argv);
+	} catch (const std::exception& err) {
+		std::cerr << err.what() << std::endl;
+		// print usage message
+		std::cerr << cli.usage() << std::endl;
+		std::exit(EXIT_FAILURE);
 	}
 
 	if (!Exists(input)) {
-		std::cout << "Input map file " << input << " can't be found." << std::endl;
+		std::cout << "Input map file " << input << " not found." << std::endl;
 		exit(EXIT_FAILURE);
 	}
+
+	// ChipSet flags
+	uint8_t csflag[65536];
+	memset(csflag, 0, 65536);
 
 	path = GetFileDirectory(input);
 
@@ -326,7 +305,7 @@ int main(int argc, char** argv) {
 
 		chipset = FindResource("ChipSet", chipset_base);
 		if (chipset.empty() && !chipset_base.empty()) {
-			std::cout << "Chipset " << chipset_base << " can't be found." << std::endl;
+			std::cout << "Chipset " << chipset_base << " not found." << std::endl;
 			exit(EXIT_FAILURE);
 		}
 		// Load flags.
@@ -351,20 +330,20 @@ int main(int argc, char** argv) {
 	}
 
 	SDL_Surface* output_img = SDL_CreateRGBSurfaceWithFormat(0, map->width * 16, map->height * 16, 32, SDL_PIXELFORMAT_RGBA32);
-
 	if (!output_img) {
 		std::cout << "Unable to create output image." << std::endl;
 		exit(EXIT_FAILURE);
 	}
 
-	if (show_events) {
+	if (!opts.no_events) {
 		// Just do the Y-sort here. Yes, it modifies the data that's supposed to be rendered.
 		// Doesn't particularly matter. What does matter is that this has to be a stable_sort,
-		//  so equivalent Y still causes ID order to be prioritized (just in case)
-		std::stable_sort(map->events.begin(), map->events.end(), MapEventYSort);
+		// so equivalent Y still causes ID order to be prioritized (just in case)
+		std::stable_sort(map->events.begin(), map->events.end(),
+			[](const auto& ev1, const auto& ev2) { return ev1.y < ev2.y; });
 	}
 
-	RenderCore(output_img, chipset, csflag, map, show_background, show_lowertiles, show_uppertiles, show_events, ignore_conditions, simulate_movement);
+	RenderCore(output_img, chipset, csflag, map, opts);
 
 	if (IMG_SavePNG(output_img, output.c_str()) < 0) {
 		std::cout << IMG_GetError() << std::endl;

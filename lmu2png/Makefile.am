@@ -1,6 +1,6 @@
 argparsedir = src/external/argparse
 
-EXTRA_DIST = README.md \
+EXTRA_DIST = README.md AUTHORS.md \
 	CMakeLists.txt \
 	CMakeModules/ConfigureWindows.cmake \
 	CMakeModules/FindICU.cmake \
@@ -10,11 +10,14 @@ EXTRA_DIST = README.md \
 
 bin_PROGRAMS = lmu2png
 lmu2png_SOURCES = \
+	src/main.h \
 	src/main.cpp \
-	src/chipset.h\
+	src/chipset.h \
 	src/chipset.cpp \
-	src/sdlxyz.cpp \
 	src/sdlxyz.h \
+	src/sdlxyz.cpp \
+	src/utils.h \
+	src/utils.cpp \
 	$(argparsedir)/argparse.hpp
 lmu2png_CXXFLAGS = \
 	-std=c++17 \

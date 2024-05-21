@@ -1,5 +1,5 @@
 /* main.cpp, lmu2png main file.
-   Copyright (C) 2016 EasyRPG Project <https://github.com/EasyRPG/>.
+   Copyright (C) 2016-2024 EasyRPG Project <https://github.com/EasyRPG/>.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -15,223 +15,46 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 // Headers
-#include <cstdio>
-#include <cstdlib>
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <algorithm>
 #include <argparse.hpp>
-#include <SDL_image.h>
-#include <lcf/ldb/reader.h>
-#include <lcf/lmu/reader.h>
-#include <lcf/reader_lcf.h>
-#include <lcf/rpg/map.h>
-#include <lcf/rpg/chipset.h>
-#include "chipset.h"
-#include "sdlxyz.h"
+#include <SDL.h>
+#include "main.h"
+#include "utils.h"
+#ifdef WITH_GUI
+	#include "gui.h"
+#endif
 
 // prevent SDL main rename
 #undef main
 
-using sOpts = struct {
-	bool no_background;
-	bool no_lowertiles;
-	bool no_uppertiles;
-	bool no_events;
-	bool ignore_conditions;
-	bool simulate_movement;
-};
-
-std::string GetFileDirectory (const std::string& file) {
-	size_t found = file.find_last_of("/\\");
-	return found == std::string::npos ? "./" : file.substr(0,found + 1);
-}
-
-bool Exists(const std::string& filename) {
-	std::ifstream infile(filename.c_str());
-	return infile.good();
-}
-
-std::string path;
-
-std::string FindResource(const std::string& folder, const std::string& base_name) {
-	static const std::vector<std::string> dirs = [] {
-		char* rtp2k_ptr = getenv("RPG2K_RTP_PATH");
-		char* rtp2k3_ptr = getenv("RPG2K3_RTP_PATH");
-		std::vector<std::string> dirs = {path};
-		if (rtp2k_ptr)
-			dirs.emplace_back(rtp2k_ptr);
-		if (rtp2k3_ptr)
-			dirs.emplace_back(rtp2k3_ptr);
-		return dirs;
-	}();
-
-	for (const auto& dir : dirs) {
-		for (const auto& ext : {".png", ".bmp", ".xyz"}) {
-			if (Exists(dir + "/" + folder + "/" + base_name + ext))
-				return dir + "/" + folder + "/" + base_name + ext;
-		}
-	}
-	return "";
-}
-
-SDL_Surface* LoadImage(const char* image_path, bool transparent = false) {
-	// Try XYZ, then IMG_Load
-	SDL_Surface* image = LoadImageXYZ(image_path);
-	if (!image) {
-		image = IMG_Load(image_path);
-	}
-	if (!image) {
-		std::cout << IMG_GetError() << std::endl;
-		exit(EXIT_FAILURE);
-	}
-
-	if (transparent && image->format->palette) {
-		// Set as color key the first color in the palette
-		SDL_SetColorKey(image, SDL_TRUE, 0);
-	}
-
-	return image;
-}
-
-void DrawTiles(SDL_Surface* output_img, stChipset * gen, uint8_t * csflag, std::unique_ptr<lcf::rpg::Map> & map, sOpts opts, int flaglayer) {
-	for (int y = 0; y < map->height; ++y) {
-		for (int x = 0; x < map->width; ++x) {
-			// Different logic between these.
-			int tindex = x + y * map->width;
-			if (!opts.no_lowertiles) {
-				uint16_t tid = map->lower_layer[tindex];
-				int l = (csflag[tid] & 0x30) ? 1 : 0;
-				if (l == flaglayer)
-					gen->RenderTile(output_img, x*16, y*16, map->lower_layer[x+y*map->width], 0);
-			}
-			if (!opts.no_uppertiles) {
-				uint16_t tid = map->upper_layer[tindex];
-				int l = (csflag[tid] & 0x10) ? 1 : 0;
-				if (l == flaglayer)
-					gen->RenderTile(output_img, x*16, y*16, map->upper_layer[x+y*map->width], 0);
-			}
-		}
-	}
-}
-
-void DrawEvents(SDL_Surface* output_img, stChipset * gen, std::unique_ptr<lcf::rpg::Map> & map, int layer, sOpts opts) {
-	for (const lcf::rpg::Event& ev : map->events) {
-		const lcf::rpg::EventPage* evp = nullptr;
-		// Find highest page without conditions
-		if (opts.ignore_conditions)
-			evp = &ev.pages[0];
-		else {
-			for (int i = 0; i < (int)ev.pages.size(); ++i) {
-				const auto& flg = ev.pages[i].condition.flags;
-				if (flg.switch_a || flg.switch_b || flg.variable || flg.item || flg.actor || flg.timer || flg.timer2)
-					continue;
-				evp = &ev.pages[i];
-			}
-		}
-		if (!evp)
-			continue;
-		// Event layering
-		if (evp->layer >= 0 && evp->layer < 3 && evp->layer != layer)
-			continue;
-		if (evp->character_name.empty())
-			gen->RenderTile(output_img, (ev.x)*16, (ev.y)*16, 0x2710 + evp->character_index, 0);
-		else {
-			std::string cname = lcf::ToString(evp->character_name);
-			std::string charset(FindResource("CharSet", cname));
-			if (charset.empty()) {
-				std::cout << "Can't find charset " << evp->character_name << std::endl;
-				continue;
-			}
-
-			SDL_Surface* charset_img(LoadImage(charset.c_str(), true));
-			int frame = evp->character_pattern;
-			if (opts.simulate_movement &&
-				(evp->animation_type == 0 || evp->animation_type == 2 || evp->animation_type == 6)) {
-				// middle frame
-				frame = 1;
-			}
-			SDL_Rect src_rect = {(evp->character_index % 4) * 72 + frame * 24,
-				(evp->character_index / 4) * 128 + evp->character_direction * 32, 24, 32};
-			SDL_Rect dst_rect {ev.x * 16 - 4, ev.y * 16 - 16, 16, 32};
-			SDL_BlitSurface(charset_img, &src_rect, output_img, &dst_rect);
-		}
-	}
-}
-
-void RenderCore(SDL_Surface* output_img, std::string chipset, uint8_t * csflag, std::unique_ptr<lcf::rpg::Map> & map, sOpts opts) {
-	SDL_Surface* chipset_img;
-	if (!chipset.empty()) {
-		chipset_img = LoadImage(chipset.c_str(), true);
-	} else {
-		chipset_img = SDL_CreateRGBSurfaceWithFormat(0, 32 * 16, 45 * 16, 32, SDL_PIXELFORMAT_RGBA32);
-	}
-
-	stChipset gen;
-	gen.GenerateFromSurface(chipset_img);
-
-	// Draw parallax background
-	if (!opts.no_background) {
-		std::string pname = lcf::ToString(map->parallax_name);
-		std::string background(FindResource("Panorama", pname));
-		if (background.empty() && !map->parallax_name.empty()) {
-			std::cout << "Can't find parallax background " << map->parallax_name << std::endl;
-		} else {
-			SDL_Surface* background_img;
-			if (map->parallax_name.empty()) {
-				background_img = SDL_CreateRGBSurface(0, 1, 1, 24, 0, 0, 0, 0);
-				SDL_FillRect(background_img, 0, 0);
-			} else {
-				background_img = (LoadImage(background.c_str()));
-			}
-			SDL_Rect dst_rect = background_img->clip_rect;
-			// Fill screen with copies of the background
-			for (dst_rect.x = 0; dst_rect.x < output_img->w; dst_rect.x += background_img->w) {
-				for (dst_rect.y = 0; dst_rect.y < output_img->h; dst_rect.y += background_img->h) {
-					SDL_BlitSurface(background_img, nullptr, output_img, &dst_rect);
-				}
-			}
-		}
-	}
-
-	// Draw below tile layer
-	if (!(opts.no_lowertiles && opts.no_uppertiles))
-		DrawTiles(output_img, &gen, csflag, map, opts, 0);
-	// Draw below-player & player-level events
-	if (!opts.no_events) {
-		DrawEvents(output_img, &gen, map, 0, opts);
-		DrawEvents(output_img, &gen, map, 1, opts);
-	}
-	// Draw above tile layer
-	if (!(opts.no_lowertiles && opts.no_uppertiles))
-		DrawTiles(output_img, &gen, csflag, map, opts, 1);
-	// Draw events
-	if (!opts.no_events)
-		DrawEvents(output_img, &gen, map, 2, opts);
-}
+// internal functions
+static SDL_Surface* process(ImgConfig conf, ErrorCallbackFunc error_cb, ErrorCallbackParam param = nullptr);
+static void cliErrorCallback(const std::string& error, ErrorCallbackParam param = nullptr);
 
 int main(int argc, char** argv) {
-	sOpts opts = { 0 };
-	std::string database, chipset, encoding, output, input;
+	std::string output;
+	ImgConfig conf = {};
 
 	// add usage and help messages
 	argparse::ArgumentParser cli("lmu2png", PACKAGE_VERSION);
 	cli.set_usage_max_line_width(120);
 	cli.add_description("EasyRPG lmu2png - Render a map to PNG file");
-	cli.add_epilog("Homepage " PACKAGE_URL " - Report bugs at: " PACKAGE_BUGREPORT);
+	cli.add_epilog(
+#ifdef WITH_GUI
+		"Not providing a map file will open the graphical tool.\n\n"
+#endif
+		"Homepage " PACKAGE_URL " - Report bugs at: " PACKAGE_BUGREPORT);
 
 	// Parse arguments
-	cli.add_argument("mapfile").required().store_into(input)
+	cli.add_argument("mapfile").required().store_into(conf.map)
 		.help("Map file to render")
 		.metavar("MapXXXX.lmu");
-	cli.add_argument("-e", "--encoding").store_into(encoding)
+	cli.add_argument("-e", "--encoding").store_into(conf.encoding)
 		.help("Project encoding (defaults to autodetection)")
 		.metavar("ENC");
-	cli.add_argument("-d", "--database").store_into(database)
+	cli.add_argument("-d", "--database").store_into(conf.database)
 		.help("Database file to use; if unspecified, uses the database file\n"
 			"in the map folder").metavar("LDB");
-	cli.add_argument("-c", "--chipset").store_into(chipset)
+	cli.add_argument("-c", "--chipset").store_into(conf.chipset)
 		.help("Chipset file to use; if unspecified, will be read from\n"
 			"the database").metavar("IMG");
 	cli.add_argument("-o", "--output").store_into(output)
@@ -239,75 +62,99 @@ int main(int argc, char** argv) {
 		.metavar("PNG");
 
 	cli.add_group("Graphic Options");
-	cli.add_argument("-B", "--no-background").store_into(opts.no_background)
+	cli.add_argument("-B", "--no-background").store_into(conf.no_background)
 		.help("Do not draw the parallax background").flag();
-	cli.add_argument("-L", "--no-lowertiles").store_into(opts.no_lowertiles)
+	cli.add_argument("-L", "--no-lowertiles").store_into(conf.no_lowertiles)
 		.help("Do not draw lower layer tiles").flag();
-	cli.add_argument("-U", "--no-uppertiles").store_into(opts.no_uppertiles)
+	cli.add_argument("-U", "--no-uppertiles").store_into(conf.no_uppertiles)
 		.help("Do not draw upper layer tiles").flag();
-	cli.add_argument("-E", "--no-events").store_into(opts.no_events)
+	cli.add_argument("-E", "--no-events").store_into(conf.no_events)
 		.help("Do not draw events").flag();
-	cli.add_argument("-C", "--ignore-conditions").store_into(opts.ignore_conditions)
+	cli.add_argument("-C", "--ignore-conditions").store_into(conf.ignore_conditions)
 		.help("Always draw the first page of the event instead of finding\n"
 			"the first page with no conditions").flag();
-	cli.add_argument("-M", "--simulate-movement").store_into(opts.simulate_movement)
+	cli.add_argument("-M", "--simulate-movement").store_into(conf.simulate_movement)
 		.help("For event pages with certain animation types, draw the middle\n"
 			"frame instead of the frame specified for the page").flag();
 
 	try {
 		cli.parse_args(argc, argv);
 	} catch (const std::exception& err) {
-		std::cerr << err.what() << std::endl;
+#ifdef WITH_GUI
+		if(err.what() == std::string{"mapfile: 1 argument(s) expected. 0 provided."}) {
+			wxDISABLE_DEBUG_SUPPORT();
+
+			// only pass program name
+			int wx_argc = 1;
+			return wxEntry(wx_argc, argv);
+		}
+#endif
+		std::cerr << err.what() << "\n";
 		// print usage message
-		std::cerr << cli.usage() << std::endl;
+		std::cerr << cli.usage() << "\n";
 		std::exit(EXIT_FAILURE);
 	}
 
-	if (!Exists(input)) {
-		std::cout << "Input map file " << input << " not found." << std::endl;
-		exit(EXIT_FAILURE);
+	// generate image
+	SDL_Surface *img = process(conf, cliErrorCallback);
+	if (!img)
+		std::exit(EXIT_FAILURE);
+
+	// save image
+	if (output.empty())
+		output = conf.map.substr(0, conf.map.length() - 3) + "png";
+
+	if (IMG_SavePNG(img, output.c_str()) < 0) {
+		SDL_FreeSurface(img);
+		cliErrorCallback(IMG_GetError());
+		std::exit(EXIT_FAILURE);
+	}
+	SDL_FreeSurface(img);
+
+	return EXIT_SUCCESS;
+}
+
+static SDL_Surface* process(ImgConfig conf, ErrorCallbackFunc error_cb, ErrorCallbackParam param) {
+	if (!Exists(conf.map)) {
+		error_cb("Input map file " + conf.map +" cannot be found.", param);
+		return nullptr;
+	}
+
+	std::string path = GetFileDirectory(conf.map);
+	CollectResourcePaths(path);
+
+	if (conf.encoding.empty())
+		conf.encoding = lcf::ReaderUtil::GetEncoding(path + "RPG_RT.ini");
+
+	std::unique_ptr<lcf::rpg::Map> map(lcf::LMU_Reader::Load(conf.map, conf.encoding));
+	if (!map) {
+		error_cb(lcf::LcfReader::GetError(), param);
+		return nullptr;
 	}
 
 	// ChipSet flags
-	uint8_t csflag[65536];
-	memset(csflag, 0, 65536);
-
-	path = GetFileDirectory(input);
-
-	if (encoding.empty())
-		encoding = lcf::ReaderUtil::GetEncoding(path + "RPG_RT.ini");
-
-	std::unique_ptr<lcf::rpg::Map> map(lcf::LMU_Reader::Load(input, encoding));
-	if (!map) {
-		std::cout << lcf::LcfReader::GetError() << std::endl;
-		exit(EXIT_FAILURE);
-	}
-
-	if (output.empty()) {
-		output = input.substr(0, input.length() - 3) + "png";
-	}
-
-	if (chipset.empty()) {
+	uint8_t csflag[65536] = {0};
+	if (conf.chipset.empty()) {
 		// Get chipset from database
-		if (database.empty())
-			database = path + "RPG_RT.ldb";
+		if (conf.database.empty())
+			conf.database = path + "RPG_RT.ldb";
 
-		auto db = lcf::LDB_Reader::Load(database, encoding);
-
+		auto db = lcf::LDB_Reader::Load(conf.database, conf.encoding);
 		if (!db) {
-			std::cout << lcf::LcfReader::GetError() << std::endl;
-			exit(EXIT_FAILURE);
+			error_cb(lcf::LcfReader::GetError(), param);
+			return nullptr;
 		}
 
-		assert(map->chipset_id <= (int)db->chipsets.size());
+		assert(map->chipset_id <= static_cast<int>(db->chipsets.size()));
 		lcf::rpg::Chipset & cs = db->chipsets[map->chipset_id - 1];
 		std::string chipset_base(cs.chipset_name);
 
-		chipset = FindResource("ChipSet", chipset_base);
-		if (chipset.empty() && !chipset_base.empty()) {
-			std::cout << "Chipset " << chipset_base << " not found." << std::endl;
-			exit(EXIT_FAILURE);
+		conf.chipset = FindResource("ChipSet", chipset_base);
+		if (conf.chipset.empty()) {
+			error_cb("Chipset " + chipset_base + " cannot be found.", param);
+			return nullptr;
 		}
+
 		// Load flags.
 		// The first 18 in lower cover various zones.
 		// Water A/B/C
@@ -331,11 +178,11 @@ int main(int argc, char** argv) {
 
 	SDL_Surface* output_img = SDL_CreateRGBSurfaceWithFormat(0, map->width * 16, map->height * 16, 32, SDL_PIXELFORMAT_RGBA32);
 	if (!output_img) {
-		std::cout << "Unable to create output image." << std::endl;
-		exit(EXIT_FAILURE);
+		error_cb("Unable to create output image.", param);
+		return nullptr;
 	}
 
-	if (!opts.no_events) {
+	if (!conf.no_events) {
 		// Just do the Y-sort here. Yes, it modifies the data that's supposed to be rendered.
 		// Doesn't particularly matter. What does matter is that this has to be a stable_sort,
 		// so equivalent Y still causes ID order to be prioritized (just in case)
@@ -343,12 +190,37 @@ int main(int argc, char** argv) {
 			[](const auto& ev1, const auto& ev2) { return ev1.y < ev2.y; });
 	}
 
-	RenderCore(output_img, chipset, csflag, map, opts);
+	RenderCore(output_img, conf.chipset, csflag, map, conf);
 
-	if (IMG_SavePNG(output_img, output.c_str()) < 0) {
-		std::cout << IMG_GetError() << std::endl;
-		exit(EXIT_FAILURE);
+	return output_img;
+}
+
+static void cliErrorCallback(const std::string& error, ErrorCallbackParam param) {
+	// Simply tell about the error
+	std::cerr << error << "\n";
+}
+
+#ifdef WITH_GUI
+unsigned char *makeImage(ImgConfig conf, int &w, int &h, ErrorCallbackFunc error_cb,
+	ErrorCallbackParam param) {
+
+	// generate image
+	SDL_Surface *img = process(conf, error_cb, param);
+	if (!img)
+		return nullptr;
+
+	// create buffer
+	unsigned char *img_data = new unsigned char[img->w * img->h * 4];
+	if(!img_data) {
+		return nullptr;
 	}
 
-	exit(EXIT_SUCCESS);
+	// copy for use in a wxBitmap
+	w = img->w;
+	h = img->h;
+	memcpy(img_data, img->pixels, img->w * img->h * 4);
+
+	SDL_FreeSurface(img);
+	return img_data;
 }
+#endif

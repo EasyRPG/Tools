@@ -1,4 +1,4 @@
-AC_INIT([lmu2png],[1.1],
+AC_INIT([lmu2png],[2.0],
 	[https://github.com/EasyRPG/Tools/issues],[lmu2png],[https://easyrpg.org/])
 
 AC_CONFIG_AUX_DIR([.])

@@ -12,7 +12,7 @@ set(dirent_dir src/external/dirent_win)
 add_executable(gencache
 	src/main.cpp
 	${dirent_dir}/dirent_win.h)
-target_compile_features(gencache PRIVATE cxx_std_14)
+target_compile_features(gencache PRIVATE cxx_std_17)
 target_include_directories(gencache PRIVATE ${dirent_dir})
 target_compile_definitions(gencache PRIVATE
 	PACKAGE_VERSION="${PROJECT_VERSION}"

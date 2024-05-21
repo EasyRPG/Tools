@@ -11,7 +11,7 @@ gencache_SOURCES = \
 	src/main.cpp \
 	$(direntdir)/dirent_win.h
 gencache_CXXFLAGS = \
-	-std=c++14 \
+	-std=c++17 \
 	-I$(srcdir)/$(direntdir) \
 	$(ICU_CFLAGS) \
 	$(NLOHMANNJSON_CFLAGS)

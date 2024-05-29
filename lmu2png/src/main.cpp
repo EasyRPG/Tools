@@ -23,16 +23,22 @@
 #include <algorithm>
 #include <argparse.hpp>
 #include <SDL_image.h>
+#include "sdlxyz.h"
 #include <lcf/ldb/reader.h>
 #include <lcf/lmu/reader.h>
 #include <lcf/reader_lcf.h>
 #include <lcf/rpg/map.h>
 #include <lcf/rpg/chipset.h>
 #include "chipset.h"
-#include "sdlxyz.h"
 
 // prevent SDL main rename
 #undef main
+
+enum class LAYER : int {
+	LOWER = 0,
+	UPPER,
+	EVENTS
+};
 
 using sOpts = struct {
 	bool no_background;
@@ -76,11 +82,11 @@ std::string FindResource(const std::string& folder, const std::string& base_name
 	return "";
 }
 
-SDL_Surface* LoadImage(const char* image_path, bool transparent = false) {
+SDL_Surface* LoadImage(std::string &image_path, bool transparent = false) {
 	// Try XYZ, then IMG_Load
-	SDL_Surface* image = LoadImageXYZ(image_path);
+	SDL_Surface* image = LoadImageXYZ(image_path.c_str());
 	if (!image) {
-		image = IMG_Load(image_path);
+		image = IMG_Load(image_path.c_str());
 	}
 	if (!image) {
 		std::cout << IMG_GetError() << std::endl;
@@ -95,34 +101,35 @@ SDL_Surface* LoadImage(const char* image_path, bool transparent = false) {
 	return image;
 }
 
-void DrawTiles(SDL_Surface* output_img, stChipset * gen, uint8_t * csflag, std::unique_ptr<lcf::rpg::Map> & map, sOpts opts, int flaglayer) {
+void DrawTiles(SDL_Surface* output_img, Chipset * gen, uint8_t * csflag, std::unique_ptr<lcf::rpg::Map> & map, sOpts opts, LAYER flaglayer) {
 	for (int y = 0; y < map->height; ++y) {
 		for (int x = 0; x < map->width; ++x) {
 			// Different logic between these.
 			int tindex = x + y * map->width;
 			if (!opts.no_lowertiles) {
 				uint16_t tid = map->lower_layer[tindex];
-				int l = (csflag[tid] & 0x30) ? 1 : 0;
+				LAYER l = (csflag[tid] & 0x30) ? LAYER::UPPER : LAYER::LOWER;
 				if (l == flaglayer)
-					gen->RenderTile(output_img, x*16, y*16, map->lower_layer[x+y*map->width], 0);
+					gen->RenderTile(output_img, x, y, map->lower_layer[x+y*map->width], 0);
 			}
 			if (!opts.no_uppertiles) {
 				uint16_t tid = map->upper_layer[tindex];
-				int l = (csflag[tid] & 0x10) ? 1 : 0;
+				LAYER l = (csflag[tid] & 0x10) ? LAYER::UPPER : LAYER::LOWER;
 				if (l == flaglayer)
-					gen->RenderTile(output_img, x*16, y*16, map->upper_layer[x+y*map->width], 0);
+					gen->RenderTile(output_img, x, y, map->upper_layer[x+y*map->width], 0);
 			}
 		}
 	}
 }
 
-void DrawEvents(SDL_Surface* output_img, stChipset * gen, std::unique_ptr<lcf::rpg::Map> & map, int layer, sOpts opts) {
+void DrawEvents(SDL_Surface* output_img, Chipset * gen, std::unique_ptr<lcf::rpg::Map> & map, LAYER layer, sOpts opts) {
 	for (const lcf::rpg::Event& ev : map->events) {
 		const lcf::rpg::EventPage* evp = nullptr;
-		// Find highest page without conditions
+
 		if (opts.ignore_conditions)
 			evp = &ev.pages[0];
 		else {
+			// Find highest page without conditions
 			for (int i = 0; i < (int)ev.pages.size(); ++i) {
 				const auto& flg = ev.pages[i].condition.flags;
 				if (flg.switch_a || flg.switch_b || flg.variable || flg.item || flg.actor || flg.timer || flg.timer2)
@@ -132,11 +139,14 @@ void DrawEvents(SDL_Surface* output_img, stChipset * gen, std::unique_ptr<lcf::r
 		}
 		if (!evp)
 			continue;
+
 		// Event layering
-		if (evp->layer >= 0 && evp->layer < 3 && evp->layer != layer)
+		if (evp->layer >= static_cast<int>(LAYER::LOWER) && evp->layer <= static_cast<int>(LAYER::EVENTS)
+			&& evp->layer != static_cast<int>(layer))
 			continue;
+
 		if (evp->character_name.empty())
-			gen->RenderTile(output_img, (ev.x)*16, (ev.y)*16, 0x2710 + evp->character_index, 0);
+			gen->RenderTile(output_img, ev.x, ev.y, TILETYPE::UPPER + evp->character_index, 0);
 		else {
 			std::string cname = lcf::ToString(evp->character_name);
 			std::string charset(FindResource("CharSet", cname));
@@ -145,7 +155,7 @@ void DrawEvents(SDL_Surface* output_img, stChipset * gen, std::unique_ptr<lcf::r
 				continue;
 			}
 
-			SDL_Surface* charset_img(LoadImage(charset.c_str(), true));
+			SDL_Surface* charset_img{LoadImage(charset, true)};
 			int frame = evp->character_pattern;
 			if (opts.simulate_movement &&
 				(evp->animation_type == 0 || evp->animation_type == 2 || evp->animation_type == 6)) {
@@ -154,7 +164,7 @@ void DrawEvents(SDL_Surface* output_img, stChipset * gen, std::unique_ptr<lcf::r
 			}
 			SDL_Rect src_rect = {(evp->character_index % 4) * 72 + frame * 24,
 				(evp->character_index / 4) * 128 + evp->character_direction * 32, 24, 32};
-			SDL_Rect dst_rect {ev.x * 16 - 4, ev.y * 16 - 16, 16, 32};
+			SDL_Rect dst_rect {ev.x * TILE_SIZE - 4, ev.y * TILE_SIZE - 16, 16, 32}; // Why -4 and -16?
 			SDL_BlitSurface(charset_img, &src_rect, output_img, &dst_rect);
 		}
 	}
@@ -163,13 +173,11 @@ void DrawEvents(SDL_Surface* output_img, stChipset * gen, std::unique_ptr<lcf::r
 void RenderCore(SDL_Surface* output_img, std::string chipset, uint8_t * csflag, std::unique_ptr<lcf::rpg::Map> & map, sOpts opts) {
 	SDL_Surface* chipset_img;
 	if (!chipset.empty()) {
-		chipset_img = LoadImage(chipset.c_str(), true);
+		chipset_img = LoadImage(chipset, true);
 	} else {
-		chipset_img = SDL_CreateRGBSurfaceWithFormat(0, 32 * 16, 45 * 16, 32, SDL_PIXELFORMAT_RGBA32);
+		chipset_img = SDL_CreateRGBSurfaceWithFormat(0, CHIPSET_WIDTH, CHIPSET_HEIGHT, 32, SDL_PIXELFORMAT_RGBA32);
 	}
-
-	stChipset gen;
-	gen.GenerateFromSurface(chipset_img);
+	Chipset gen(chipset_img);
 
 	// Draw parallax background
 	if (!opts.no_background) {
@@ -181,9 +189,9 @@ void RenderCore(SDL_Surface* output_img, std::string chipset, uint8_t * csflag, 
 			SDL_Surface* background_img;
 			if (map->parallax_name.empty()) {
 				background_img = SDL_CreateRGBSurface(0, 1, 1, 24, 0, 0, 0, 0);
-				SDL_FillRect(background_img, 0, 0);
+				SDL_FillRect(background_img, nullptr, 0);
 			} else {
-				background_img = (LoadImage(background.c_str()));
+				background_img = LoadImage(background);
 			}
 			SDL_Rect dst_rect = background_img->clip_rect;
 			// Fill screen with copies of the background
@@ -197,18 +205,18 @@ void RenderCore(SDL_Surface* output_img, std::string chipset, uint8_t * csflag, 
 
 	// Draw below tile layer
 	if (!(opts.no_lowertiles && opts.no_uppertiles))
-		DrawTiles(output_img, &gen, csflag, map, opts, 0);
+		DrawTiles(output_img, &gen, csflag, map, opts, LAYER::LOWER);
 	// Draw below-player & player-level events
 	if (!opts.no_events) {
-		DrawEvents(output_img, &gen, map, 0, opts);
-		DrawEvents(output_img, &gen, map, 1, opts);
+		DrawEvents(output_img, &gen, map, LAYER::LOWER, opts);
+		DrawEvents(output_img, &gen, map, LAYER::UPPER, opts);
 	}
 	// Draw above tile layer
 	if (!(opts.no_lowertiles && opts.no_uppertiles))
-		DrawTiles(output_img, &gen, csflag, map, opts, 1);
+		DrawTiles(output_img, &gen, csflag, map, opts, LAYER::UPPER);
 	// Draw events
 	if (!opts.no_events)
-		DrawEvents(output_img, &gen, map, 2, opts);
+		DrawEvents(output_img, &gen, map, LAYER::EVENTS, opts);
 }
 
 int main(int argc, char** argv) {
@@ -293,7 +301,6 @@ int main(int argc, char** argv) {
 			database = path + "RPG_RT.ldb";
 
 		auto db = lcf::LDB_Reader::Load(database, encoding);
-
 		if (!db) {
 			std::cout << lcf::LcfReader::GetError() << std::endl;
 			exit(EXIT_FAILURE);
@@ -329,7 +336,7 @@ int main(int argc, char** argv) {
 		memset(csflag + 10000, 0x10, 144);
 	}
 
-	SDL_Surface* output_img = SDL_CreateRGBSurfaceWithFormat(0, map->width * 16, map->height * 16, 32, SDL_PIXELFORMAT_RGBA32);
+	SDL_Surface* output_img = SDL_CreateRGBSurfaceWithFormat(0, map->width * TILE_SIZE, map->height * TILE_SIZE, 32, SDL_PIXELFORMAT_RGBA32);
 	if (!output_img) {
 		std::cout << "Unable to create output image." << std::endl;
 		exit(EXIT_FAILURE);

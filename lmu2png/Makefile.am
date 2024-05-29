@@ -11,10 +11,10 @@ EXTRA_DIST = README.md \
 bin_PROGRAMS = lmu2png
 lmu2png_SOURCES = \
 	src/main.cpp \
-	src/chipset.h\
+	src/chipset.h \
 	src/chipset.cpp \
-	src/sdlxyz.cpp \
 	src/sdlxyz.h \
+	src/sdlxyz.cpp \
 	$(argparsedir)/argparse.hpp
 lmu2png_CXXFLAGS = \
 	-std=c++17 \

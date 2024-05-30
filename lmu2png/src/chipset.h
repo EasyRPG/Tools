@@ -12,38 +12,59 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #ifndef CHIPSET_H
 #define CHIPSET_H
 
-// *****************************************************************************
-// =============================================================================
-    #include <stdlib.h>
-    #include <stdio.h>
-    #include "SDL.h"
-// =============================================================================
-// *****************************************************************************
+#include <stdlib.h>
+#include <stdio.h>
+#include <FreeImage.h>
+#include "main.h"
 
-    // === Chipset structure ===================================================
-    struct stChipset
-    {
+constexpr int TILE_SIZE=16;
+constexpr int HALF_TILE=TILE_SIZE/2;
+constexpr int TILES_IN_ROW=32;
+constexpr int TILES_IN_COL=45;
+constexpr int CHIPSET_WIDTH=TILES_IN_ROW*TILE_SIZE;
+constexpr int CHIPSET_HEIGHT=TILES_IN_COL*TILE_SIZE;
+
+enum TILETYPE {
+	UPPER = 0x2710,
+	LOWER = 0x1388,
+	TERRAIN = 0x0FA0,
+	ANIMATED = 0x0BB8
+};
+
+// === Chipset structure ===================================================
+struct Chipset {
 	// --- Fields declaration ----------------------------------------------
+	private:
+		// The chipset structure holds the graphic tileset of a chipset, as well
+		// as their properties and the methods for correctly displaying them.
+		BitmapPtr m_Base;    // Chipset's base surface!
+		BitmapPtr m_Chipset; // Chipset's precalculated surface
 
-        // The chipset structure holds the graphic tileset of a chipset, as well
-        // as their properties and the methods for correctly displaying them.
-        SDL_Surface * BaseSurface;      // Chipset's base surface!
-        SDL_Surface * ChipsetSurface;   // Chipset's precalculated surface
+	// --- Methods declaration ---------------------------------------------
+	public:
+		Chipset() = delete;
+		explicit Chipset(FIBITMAP *Surface);
+		~Chipset();
 
-        // --- Methods declaration ---------------------------------------------
-        bool GenerateFromSurface(SDL_Surface * Surface);
-        void Release();
+		void RenderTile(FIBITMAP *dest, int tile_x, int tile_y, unsigned short Tile, int Frame);
+		void RenderWaterTile(FIBITMAP *dest, unsigned short Tile, int Frame, int Border, int Water, int Combination);
+		void RenderDepthTile(FIBITMAP *dest, unsigned short Tile, int Number, int Depth);
+		void RenderTerrainTile(FIBITMAP *dest, unsigned short Tile, int Terrain, int Combination);
+		void DrawSurface(FIBITMAP *dest, int dX, int dY, int sX, int sY, int sW, int sH, bool fromBase = true);
 
-        void RenderTile(SDL_Surface * Destiny, int x, int y, unsigned short Tile, int Frame);
-        void RenderWaterTile(SDL_Surface * Destiny, int x, int y, int Frame, int Border, int Water, int Combination);
-        void RenderDepthTile(SDL_Surface * Destiny, int x, int y, int Frame, int Depth, int DepthCombination);
-        void RenderTerrainTile(SDL_Surface * Destiny, int x, int y, int Terrain, int Combination);
-        void DrawSurface(SDL_Surface* destiny, int dX, int dY, SDL_Surface* source, int sX, int sY, int sW, int sH);
-    };
+	private:
+		// Tile drawing helper functions
+		void DrawFull(FIBITMAP *dest, int x, int y, int sX, int sY);
+		void DrawQuarter(FIBITMAP *dest, int x, int y, int sX, int sY);
+		void DrawWide(FIBITMAP *dest, int x, int y, int sX, int sY);
+		void DrawTall(FIBITMAP *dest, int x, int y, int sX, int sY);
+		void DrawEdges(FIBITMAP *dest, int x, int y, int sX, int sY, int Combination);
+};
 
 #endif

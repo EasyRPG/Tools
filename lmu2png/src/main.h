@@ -1,5 +1,5 @@
-/* sdlxyz.h, prototype for SDL XYZ file loader
-   Copyright (C) 2015 EasyRPG Project <https://github.com/EasyRPG/>.
+/* main.h
+   Copyright (C) 2024 EasyRPG Project <https://github.com/EasyRPG/>.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,11 +14,19 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef SDLXYZ_H
-#define SDLXYZ_H
+#ifndef MAIN_H
+#define MAIN_H
 
-#include "SDL.h"
+#include <FreeImage.h>
+#include <memory>
 
-SDL_Surface* LoadImageXYZ(const char* image_path);
+struct FIBITMAPDeleter {
+        void operator()(FIBITMAP* dib) {
+                FreeImage_Unload(dib);
+        }
+};
+using BitmapPtr = std::unique_ptr<FIBITMAP, FIBITMAPDeleter>;
+
+void CustomAlphaCombine(FIBITMAP *src, int sLeft, int sTop, FIBITMAP *dst, int dLeft, int dTop, int width, int height);
 
 #endif

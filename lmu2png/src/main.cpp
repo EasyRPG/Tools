@@ -1,5 +1,5 @@
 /* main.cpp, lmu2png main file.
-   Copyright (C) 2016 EasyRPG Project <https://github.com/EasyRPG/>.
+   Copyright (C) 2016-2024 EasyRPG Project <https://github.com/EasyRPG/>.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,19 +20,19 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <map>
 #include <algorithm>
 #include <argparse.hpp>
-#include <SDL_image.h>
-#include "sdlxyz.h"
+#include <FreeImage.h>
 #include <lcf/ldb/reader.h>
 #include <lcf/lmu/reader.h>
 #include <lcf/reader_lcf.h>
 #include <lcf/rpg/map.h>
 #include <lcf/rpg/chipset.h>
 #include "chipset.h"
+#include "xyzplugin.h"
 
-// prevent SDL main rename
-#undef main
+// type and other definitions
 
 enum class LAYER : int {
 	LOWER = 0,
@@ -41,6 +41,7 @@ enum class LAYER : int {
 };
 
 using sOpts = struct {
+	bool verbose;
 	bool no_background;
 	bool no_lowertiles;
 	bool no_uppertiles;
@@ -48,6 +49,8 @@ using sOpts = struct {
 	bool ignore_conditions;
 	bool simulate_movement;
 };
+
+using CharsetCacheMap = std::map<std::string, BitmapPtr>;
 
 std::string GetFileDirectory (const std::string& file) {
 	size_t found = file.find_last_of("/\\");
@@ -82,26 +85,103 @@ std::string FindResource(const std::string& folder, const std::string& base_name
 	return "";
 }
 
-SDL_Surface* LoadImage(std::string &image_path, bool transparent = false) {
-	// Try XYZ, then IMG_Load
-	SDL_Surface* image = LoadImageXYZ(image_path.c_str());
-	if (!image) {
-		image = IMG_Load(image_path.c_str());
-	}
-	if (!image) {
-		std::cout << IMG_GetError() << std::endl;
-		exit(EXIT_FAILURE);
+FIBITMAP* LoadImage(std::string &image_path, bool transparent = false) {
+	BitmapPtr image;
+
+	FREE_IMAGE_FORMAT format = FreeImage_GetFileType(image_path.c_str());
+	if (format != FIF_UNKNOWN) {
+		image.reset(FreeImage_Load(format, image_path.c_str()));
 	}
 
-	if (transparent && image->format->palette) {
+	if (!image) {
+		std::cout << "Error loading \"" << image_path << "\".\n";
+		return nullptr;
+	}
+
+	if (transparent) {
 		// Set as color key the first color in the palette
-		SDL_SetColorKey(image, SDL_TRUE, 0);
+		FreeImage_SetTransparentIndex(image.get(), 0);
 	}
 
-	return image;
+	// To make blitting easier, unpack palette and add alpha channel
+	FIBITMAP *output = FreeImage_ConvertTo32Bits(image.get());
+
+	return output;
 }
 
-void DrawTiles(SDL_Surface* output_img, Chipset * gen, uint8_t * csflag, std::unique_ptr<lcf::rpg::Map> & map, sOpts opts, LAYER flaglayer) {
+void CustomAlphaCombine(FIBITMAP *src, int sLeft, int sTop, FIBITMAP *dst, int dLeft, int dTop, int width, int height) {
+	if (!src || !dst) {
+		std::cout << "Source or Destination parameter undefined.\n";
+		return;
+	}
+
+	int sBpp = FreeImage_GetBPP(src);
+	int dBpp = FreeImage_GetBPP(dst);
+	if((sBpp != 32) || (dBpp != 32)) {
+		std::cout << "Source or Destination have wrong format.\n";
+		return;
+	}
+
+	int sWidth = FreeImage_GetWidth(src);
+	int sHeight = FreeImage_GetHeight(src);
+	int dWidth = FreeImage_GetWidth(dst);
+	int dHeight = FreeImage_GetHeight(dst);
+
+	// Sanitize src dims
+	if((sLeft < 0) || (sTop < 0) || (sLeft + width > sWidth) || (sTop + height > sHeight)) {
+		std::cout << "Source dimension error.\n";
+		return;
+	}
+
+	// Event special case: draw only part on borders
+	if(dLeft < 0) {
+		int amount = dLeft + width;
+		dLeft = 0;
+		width = amount;
+	}
+	if(dTop < 0) {
+		int amount = dTop + height;
+		dTop = 0;
+		height = amount;
+	}
+	if(dLeft + width > dWidth) {
+		int amount = dLeft + width - dWidth;
+		width -= amount;
+	}
+	if(dTop + height > dHeight) {
+		int amount = dTop + height - dHeight;
+		height -= amount;
+	}
+
+	// Sanitize final dims
+	if ((width <= 0) || (height <= 0)) {
+		std::cout << "Skipping zero/negative size copy.\n";
+		return;
+	}
+
+	int bytespp = sBpp / 8;
+	for(int y = 0; y < height; y++) {
+		// set position to upper left corner
+		BYTE *src_bits = FreeImage_GetScanLine(src, sHeight - 1 - (sTop + y)) + sLeft * bytespp;
+		BYTE *dst_bits = FreeImage_GetScanLine(dst, dHeight - 1 - (dTop + y)) + dLeft * bytespp;
+
+		for(int x = 0; x < width; x++) {
+			// skip fully transparent pixels
+			if (src_bits[FI_RGBA_ALPHA] != 0) {
+				dst_bits[FI_RGBA_RED]   = src_bits[FI_RGBA_RED];
+				dst_bits[FI_RGBA_GREEN] = src_bits[FI_RGBA_GREEN];
+				dst_bits[FI_RGBA_BLUE]  = src_bits[FI_RGBA_BLUE];
+				dst_bits[FI_RGBA_ALPHA] = src_bits[FI_RGBA_ALPHA];
+			}
+
+			// next pixel
+			src_bits += bytespp;
+			dst_bits += bytespp;
+		}
+	}
+}
+
+void DrawTiles(FIBITMAP* output_img, Chipset* gen, uint8_t * csflag, std::unique_ptr<lcf::rpg::Map> & map, sOpts opts, LAYER flaglayer) {
 	for (int y = 0; y < map->height; ++y) {
 		for (int x = 0; x < map->width; ++x) {
 			// Different logic between these.
@@ -122,7 +202,7 @@ void DrawTiles(SDL_Surface* output_img, Chipset * gen, uint8_t * csflag, std::un
 	}
 }
 
-void DrawEvents(SDL_Surface* output_img, Chipset * gen, std::unique_ptr<lcf::rpg::Map> & map, LAYER layer, sOpts opts) {
+void DrawEvents(FIBITMAP* output_img, Chipset* gen, std::unique_ptr<lcf::rpg::Map> & map, LAYER layer, CharsetCacheMap &charsets, sOpts opts) {
 	for (const lcf::rpg::Event& ev : map->events) {
 		const lcf::rpg::EventPage* evp = nullptr;
 
@@ -149,74 +229,117 @@ void DrawEvents(SDL_Surface* output_img, Chipset * gen, std::unique_ptr<lcf::rpg
 			gen->RenderTile(output_img, ev.x, ev.y, TILETYPE::UPPER + evp->character_index, 0);
 		else {
 			std::string cname = lcf::ToString(evp->character_name);
-			std::string charset(FindResource("CharSet", cname));
-			if (charset.empty()) {
-				std::cout << "Can't find charset " << evp->character_name << std::endl;
-				continue;
+			if(charsets.count(cname) == 0) {
+				if(opts.verbose)
+					std::cerr << "Loading CharSet \"" << cname << "\"\n";
+
+				std::string charset{FindResource("CharSet", cname)};
+				if (charset.empty()) {
+					std::cout << "Charset \"" << evp->character_name << "\" not found.\n";
+					continue;
+				}
+
+				// add image to cache
+				BitmapPtr charset_img{LoadImage(charset, true)};
+				if(charset_img) {
+					charsets.emplace(cname, std::move(charset_img));
+				}
+			} else {
+				// use from cache
+#ifndef NDEBUG
+				if(opts.verbose)
+					std::cerr << "Using CharSet \"" << cname << "\" (cached)\n";
+#endif
 			}
 
-			SDL_Surface* charset_img{LoadImage(charset, true)};
 			int frame = evp->character_pattern;
 			if (opts.simulate_movement &&
 				(evp->animation_type == 0 || evp->animation_type == 2 || evp->animation_type == 6)) {
 				// middle frame
 				frame = 1;
 			}
-			SDL_Rect src_rect = {(evp->character_index % 4) * 72 + frame * 24,
-				(evp->character_index / 4) * 128 + evp->character_direction * 32, 24, 32};
-			SDL_Rect dst_rect {ev.x * TILE_SIZE - 4, ev.y * TILE_SIZE - 16, 16, 32}; // Why -4 and -16?
-			SDL_BlitSurface(charset_img, &src_rect, output_img, &dst_rect);
+
+			CustomAlphaCombine(charsets[cname].get(), (evp->character_index % 4) * 72 + frame * 24,
+				(evp->character_index / 4) * 128 + evp->character_direction * 32,
+				output_img, ev.x * TILE_SIZE-4, ev.y * TILE_SIZE-16, // Why -4 and -16?
+				24, 32);
 		}
 	}
 }
 
-void RenderCore(SDL_Surface* output_img, std::string chipset, uint8_t * csflag, std::unique_ptr<lcf::rpg::Map> & map, sOpts opts) {
-	SDL_Surface* chipset_img;
+void RenderCore(FIBITMAP* output_img, std::string &chipset, uint8_t * csflag, std::unique_ptr<lcf::rpg::Map> & map, sOpts opts) {
+	BitmapPtr chipset_img;
 	if (!chipset.empty()) {
-		chipset_img = LoadImage(chipset, true);
-	} else {
-		chipset_img = SDL_CreateRGBSurfaceWithFormat(0, CHIPSET_WIDTH, CHIPSET_HEIGHT, 32, SDL_PIXELFORMAT_RGBA32);
+		chipset_img.reset(LoadImage(chipset, true));
 	}
-	Chipset gen(chipset_img);
+
+	if(!chipset_img) {
+		if(opts.verbose)
+			std::cerr << "Using empty chipset image.\n";
+
+		chipset_img.reset(FreeImage_Allocate(CHIPSET_WIDTH, CHIPSET_HEIGHT, 32));
+		if (!chipset_img) {
+			std::cout << "Unable to create empty chipset image.\n";
+			exit(EXIT_FAILURE);
+		}
+	}
+	Chipset gen(chipset_img.get());
 
 	// Draw parallax background
 	if (!opts.no_background) {
 		std::string pname = lcf::ToString(map->parallax_name);
-		std::string background(FindResource("Panorama", pname));
-		if (background.empty() && !map->parallax_name.empty()) {
-			std::cout << "Can't find parallax background " << map->parallax_name << std::endl;
+		if (pname.empty()) {
+			if(opts.verbose)
+				std::cerr << "Using black background.\n";
+
+			// Fill screen with black
+			RGBQUAD black{0, 0, 0, 0xFF};
+			FreeImage_FillBackground(output_img, &black);
 		} else {
-			SDL_Surface* background_img;
-			if (map->parallax_name.empty()) {
-				background_img = SDL_CreateRGBSurface(0, 1, 1, 24, 0, 0, 0, 0);
-				SDL_FillRect(background_img, nullptr, 0);
+			if(opts.verbose)
+				std::cerr << "Loading Panorama \"" << pname << "\"\n";
+
+			std::string background{FindResource("Panorama", pname)};
+			if (background.empty()) {
+				std::cout << "Parallax background \"" << pname << "\" not found.\n";
 			} else {
-				background_img = LoadImage(background);
-			}
-			SDL_Rect dst_rect = background_img->clip_rect;
-			// Fill screen with copies of the background
-			for (dst_rect.x = 0; dst_rect.x < output_img->w; dst_rect.x += background_img->w) {
-				for (dst_rect.y = 0; dst_rect.y < output_img->h; dst_rect.y += background_img->h) {
-					SDL_BlitSurface(background_img, nullptr, output_img, &dst_rect);
-				}
+				BitmapPtr background_img{LoadImage(background)};
+
+				// Fill screen with scaled background
+				int dw = FreeImage_GetWidth(output_img);
+				int dh = FreeImage_GetHeight(output_img);
+				BitmapPtr scaled{FreeImage_Rescale(background_img.get(), dw, dh, FILTER_BICUBIC)};
+				FreeImage_Paste(output_img, scaled.get(), 0, 0, 256);
+
+				//FreeImage_Save(FIF_PNG, scaled.get(), "_back.png");
 			}
 		}
 	}
+
+	CharsetCacheMap charsets;
 
 	// Draw below tile layer
 	if (!(opts.no_lowertiles && opts.no_uppertiles))
 		DrawTiles(output_img, &gen, csflag, map, opts, LAYER::LOWER);
 	// Draw below-player & player-level events
 	if (!opts.no_events) {
-		DrawEvents(output_img, &gen, map, LAYER::LOWER, opts);
-		DrawEvents(output_img, &gen, map, LAYER::UPPER, opts);
+		DrawEvents(output_img, &gen, map, LAYER::LOWER, charsets, opts);
+		DrawEvents(output_img, &gen, map, LAYER::UPPER, charsets, opts);
 	}
 	// Draw above tile layer
 	if (!(opts.no_lowertiles && opts.no_uppertiles))
 		DrawTiles(output_img, &gen, csflag, map, opts, LAYER::UPPER);
 	// Draw events
 	if (!opts.no_events)
-		DrawEvents(output_img, &gen, map, LAYER::EVENTS, opts);
+		DrawEvents(output_img, &gen, map, LAYER::EVENTS, charsets, opts);
+
+	//for(auto &kv : charsets) {
+	//	FreeImage_Save(FIF_PNG, kv.second.get(), std::string("_cs_" + kv.first + ".png").c_str());
+	//}
+}
+
+void MyFreeImageMessageHandler(FREE_IMAGE_FORMAT /* fif */, const char *message) {
+	std::cout << "FreeImage error: " << message << "\n";
 }
 
 int main(int argc, char** argv) {
@@ -245,6 +368,8 @@ int main(int argc, char** argv) {
 	cli.add_argument("-o", "--output").store_into(output)
 		.help("Set the output filepath (defaults to map name)")
 		.metavar("PNG");
+	cli.add_argument("--verbose").store_into(opts.verbose)
+		.help("Explain what is being done").flag();
 
 	cli.add_group("Graphic Options");
 	cli.add_argument("-B", "--no-background").store_into(opts.no_background)
@@ -275,6 +400,13 @@ int main(int argc, char** argv) {
 		std::cout << "Input map file " << input << " not found." << std::endl;
 		exit(EXIT_FAILURE);
 	}
+
+	// Static FreeImage library needs this
+	FreeImage_Initialise(false);
+	atexit(FreeImage_DeInitialise);
+	// Register our error handler and plugin
+	FreeImage_SetOutputMessage(MyFreeImageMessageHandler);
+	FreeImage_RegisterLocalPlugin(InitXYZ);
 
 	// ChipSet flags
 	uint8_t csflag[65536];
@@ -310,11 +442,15 @@ int main(int argc, char** argv) {
 		lcf::rpg::Chipset & cs = db->chipsets[map->chipset_id - 1];
 		std::string chipset_base(cs.chipset_name);
 
+		if(opts.verbose)
+			std::cerr << "Loading ChipSet \"" << chipset_base << "\"\n";
+
 		chipset = FindResource("ChipSet", chipset_base);
 		if (chipset.empty() && !chipset_base.empty()) {
-			std::cout << "Chipset " << chipset_base << " not found." << std::endl;
+			std::cout << "Chipset \"" << chipset_base << "\" not found.\n";
 			exit(EXIT_FAILURE);
 		}
+
 		// Load flags.
 		// The first 18 in lower cover various zones.
 		// Water A/B/C
@@ -336,9 +472,9 @@ int main(int argc, char** argv) {
 		memset(csflag + 10000, 0x10, 144);
 	}
 
-	SDL_Surface* output_img = SDL_CreateRGBSurfaceWithFormat(0, map->width * TILE_SIZE, map->height * TILE_SIZE, 32, SDL_PIXELFORMAT_RGBA32);
+	BitmapPtr output_img{FreeImage_Allocate(map->width * TILE_SIZE, map->height * TILE_SIZE, 32)};
 	if (!output_img) {
-		std::cout << "Unable to create output image." << std::endl;
+		std::cout << "Unable to create output image.\n";
 		exit(EXIT_FAILURE);
 	}
 
@@ -350,10 +486,10 @@ int main(int argc, char** argv) {
 			[](const auto& ev1, const auto& ev2) { return ev1.y < ev2.y; });
 	}
 
-	RenderCore(output_img, chipset, csflag, map, opts);
+	RenderCore(output_img.get(), chipset, csflag, map, opts);
 
-	if (IMG_SavePNG(output_img, output.c_str()) < 0) {
-		std::cout << IMG_GetError() << std::endl;
+	if (!FreeImage_Save(FIF_PNG, output_img.get(), output.c_str(), PNG_Z_BEST_COMPRESSION)) {
+		std::cout << "Error saving \"" << output << "\".\n";
 		exit(EXIT_FAILURE);
 	}
 

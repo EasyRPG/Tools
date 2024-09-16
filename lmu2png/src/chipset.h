@@ -20,7 +20,8 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <SDL.h>
+#include <FreeImage.h>
+#include "main.h"
 
 constexpr int TILE_SIZE=16;
 constexpr int HALF_TILE=TILE_SIZE/2;
@@ -42,28 +43,28 @@ struct Chipset {
 	private:
 		// The chipset structure holds the graphic tileset of a chipset, as well
 		// as their properties and the methods for correctly displaying them.
-		SDL_Surface * BaseSurface;    // Chipset's base surface!
-		SDL_Surface * ChipsetSurface; // Chipset's precalculated surface
+		BitmapPtr m_Base;    // Chipset's base surface!
+		BitmapPtr m_Chipset; // Chipset's precalculated surface
 
 	// --- Methods declaration ---------------------------------------------
 	public:
 		Chipset() = delete;
-		explicit Chipset(SDL_Surface * Surface);
+		explicit Chipset(FIBITMAP *Surface);
 		~Chipset();
 
-		void RenderTile(SDL_Surface * dest, int tile_x, int tile_y, unsigned short Tile, int Frame);
-		void RenderWaterTile(SDL_Surface * dest, unsigned short Tile, int Frame, int Border, int Water, int Combination);
-		void RenderDepthTile(SDL_Surface * dest, unsigned short Tile, int Number, int Depth);
-		void RenderTerrainTile(SDL_Surface * dest, unsigned short Tile, int Terrain, int Combination);
-		void DrawSurface(SDL_Surface* destiny, int dX, int dY, int sX, int sY, int sW, int sH, bool fromBase = true);
+		void RenderTile(FIBITMAP *dest, int tile_x, int tile_y, unsigned short Tile, int Frame);
+		void RenderWaterTile(FIBITMAP *dest, unsigned short Tile, int Frame, int Border, int Water, int Combination);
+		void RenderDepthTile(FIBITMAP *dest, unsigned short Tile, int Number, int Depth);
+		void RenderTerrainTile(FIBITMAP *dest, unsigned short Tile, int Terrain, int Combination);
+		void DrawSurface(FIBITMAP *dest, int dX, int dY, int sX, int sY, int sW, int sH, bool fromBase = true);
 
 	private:
 		// Tile drawing helper functions
-		void DrawFull(SDL_Surface *dest, int x, int y, int sX, int sY);
-		void DrawQuarter(SDL_Surface *dest, int x, int y, int sX, int sY);
-		void DrawWide(SDL_Surface *dest, int x, int y, int sX, int sY);
-		void DrawTall(SDL_Surface *dest, int x, int y, int sX, int sY);
-		void DrawEdges(SDL_Surface *dest, int x, int y, int sX, int sY, int Combination);
+		void DrawFull(FIBITMAP *dest, int x, int y, int sX, int sY);
+		void DrawQuarter(FIBITMAP *dest, int x, int y, int sX, int sY);
+		void DrawWide(FIBITMAP *dest, int x, int y, int sX, int sY);
+		void DrawTall(FIBITMAP *dest, int x, int y, int sX, int sY);
+		void DrawEdges(FIBITMAP *dest, int x, int y, int sX, int sY, int Combination);
 };
 
 #endif

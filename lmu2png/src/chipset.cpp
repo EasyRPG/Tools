@@ -17,28 +17,15 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <SDL.h>
 #include "chipset.h"
 
 #define BIT(x) (1 << (x))
 
 // === Chipset structure ===================================================
-Chipset::Chipset(SDL_Surface * Surface) {
+Chipset::Chipset(FIBITMAP *Surface) {
 	// Set base surface, used for generating the tileset
-	BaseSurface = Surface;
-
-	if (BaseSurface->format->palette) {
-		ChipsetSurface  = SDL_CreateRGBSurface(0, CHIPSET_WIDTH, CHIPSET_HEIGHT, 8, 0, 0, 0, 0);
-
-		// Copy palette and Color Key
-		SDL_SetSurfacePalette(ChipsetSurface, Surface->format->palette);
-		uint32_t ckey;
-		SDL_GetColorKey(Surface, &ckey);
-		SDL_SetColorKey(ChipsetSurface, SDL_TRUE, ckey);
-	} else {
-		ChipsetSurface = SDL_CreateRGBSurfaceWithFormat(0, CHIPSET_WIDTH, CHIPSET_HEIGHT, 32, SDL_PIXELFORMAT_RGBA32);
-	}
-
+	m_Base.reset(FreeImage_Clone(Surface));
+	m_Chipset.reset(FreeImage_Allocate(CHIPSET_WIDTH, CHIPSET_HEIGHT, 32));
 	int CurrentTile = 0;
 
 	// Generate water tiles A-C
@@ -52,14 +39,14 @@ Chipset::Chipset(SDL_Surface * Surface) {
 
 		for (int frame = 0; frame<3; frame++) {
 			for (int comb = 0; comb<47; comb++, CurrentTile++)
-				RenderWaterTile(ChipsetSurface, CurrentTile, frame, border, water, comb);
+				RenderWaterTile(m_Chipset.get(), CurrentTile, frame, border, water, comb);
 		}
 	}
 
 	// Generate water depth tiles
 	for (int depth = 1; depth<4; depth+=2) {
 		for (int i=0; i<48; i++, CurrentTile++)
-			RenderDepthTile(ChipsetSurface, CurrentTile, i, depth);
+			RenderDepthTile(m_Chipset.get(), CurrentTile, i, depth);
 	}
 
 	// Generate animated tiles
@@ -69,14 +56,14 @@ Chipset::Chipset(SDL_Surface * Surface) {
 			int y = (CurrentTile/TILES_IN_ROW)*TILE_SIZE;
 			int sX = 48+j*TILE_SIZE, sY = 64+i*TILE_SIZE;
 
-			DrawFull(ChipsetSurface, x, y, sX, sY);
+			DrawFull(m_Chipset.get(), x, y, sX, sY);
 		}
 	}
 
 	// Generate terrain tiles
 	for (int terrain=0; terrain<12; terrain++) {
 		for (int comb=0; comb<50; comb++, CurrentTile++)
-			RenderTerrainTile(ChipsetSurface, CurrentTile, terrain, comb);
+			RenderTerrainTile(m_Chipset.get(), CurrentTile, terrain, comb);
 	}
 
 	// Generate common tiles
@@ -86,15 +73,15 @@ Chipset::Chipset(SDL_Surface * Surface) {
 		int sX = 192+((i%6)*TILE_SIZE)+(i/96)*96;
 		int sY = ((i/6)%TILE_SIZE)*TILE_SIZE;
 
-		DrawFull(ChipsetSurface, x, y, sX, sY);
+		DrawFull(m_Chipset.get(), x, y, sX, sY);
 	}
 }
 
 Chipset::~Chipset() {
-	SDL_FreeSurface(ChipsetSurface);
+	//FreeImage_Save(FIF_PNG, m_Chipset.get(), "_chipset.png");
 }
 
-void Chipset::RenderTile(SDL_Surface * dest, int tile_x, int tile_y,
+void Chipset::RenderTile(FIBITMAP *dest, int tile_x, int tile_y,
 	unsigned short Tile, int Frame) {
 	tile_x *= TILE_SIZE;
 	tile_y *= TILE_SIZE;
@@ -118,7 +105,7 @@ void Chipset::RenderTile(SDL_Surface * dest, int tile_x, int tile_y,
 	DrawSurface(dest, tile_x, tile_y, ((Tile&0x1F)<<4), ((Tile>>5)<<4), TILE_SIZE, TILE_SIZE, false);
 }
 
-void Chipset::RenderWaterTile(SDL_Surface * dest, unsigned short Tile, int Frame, int Border, int Water, int Combination) {
+void Chipset::RenderWaterTile(FIBITMAP *dest, unsigned short Tile, int Frame, int Border, int Water, int Combination) {
 	int x = (Tile%TILES_IN_ROW)*TILE_SIZE;
 	int y = (Tile/TILES_IN_ROW)*TILE_SIZE;
 	int SFrame = Frame*16, SBorder = Border*48;
@@ -247,7 +234,7 @@ void Chipset::RenderWaterTile(SDL_Surface * dest, unsigned short Tile, int Frame
 	}
 }
 
-void Chipset::RenderTerrainTile(SDL_Surface * dest, unsigned short Tile, int Terrain, int Combination) {
+void Chipset::RenderTerrainTile(FIBITMAP *dest, unsigned short Tile, int Terrain, int Combination) {
 	int x = (Tile%TILES_IN_ROW)*TILE_SIZE;
 	int y = (Tile/TILES_IN_ROW)*TILE_SIZE;
 	Terrain += 4;
@@ -375,7 +362,7 @@ void Chipset::RenderTerrainTile(SDL_Surface * dest, unsigned short Tile, int Ter
 	}
 }
 
-void Chipset::RenderDepthTile(SDL_Surface * dest, unsigned short Tile, int Number, int Depth) {
+void Chipset::RenderDepthTile(FIBITMAP *dest, unsigned short Tile, int Number, int Depth) {
 	int x = (Tile%TILES_IN_ROW)*TILE_SIZE;
 	int y = (Tile/TILES_IN_ROW)*TILE_SIZE;
 	int Frame = Number/16;
@@ -387,37 +374,34 @@ void Chipset::RenderDepthTile(SDL_Surface * dest, unsigned short Tile, int Numbe
 	DrawEdges(dest, x, y, sX, sY, DepthCombination);
 }
 
-void Chipset::DrawSurface(SDL_Surface* dest, int dX, int dY, int sX, int sY, int sW, int sH, bool fromBase) {
-	SDL_Surface* src = fromBase ? BaseSurface : ChipsetSurface;
+void Chipset::DrawSurface(FIBITMAP *dest, int dX, int dY, int sX, int sY, int sW, int sH, bool fromBase) {
+	FIBITMAP* src = fromBase ? m_Base.get() : m_Chipset.get();
 
 	if (sW == -1)
-		sW = src->w;
+		sW = FreeImage_GetWidth(src);
 	if (sH == -1)
-		sH = src->h;
+		sH = FreeImage_GetHeight(src);
 
-	SDL_Rect srcRect{sX, sY, sW, sH};
-	SDL_Rect destRect{dX, dY, sW, sH};
-
-	SDL_BlitSurface(src, &srcRect, dest, &destRect);
+	CustomAlphaCombine(src, sX, sY, dest, dX, dY, sW, sH);
 }
 
-inline void Chipset::DrawFull(SDL_Surface *dest, int x, int y, int sX, int sY) {
+inline void Chipset::DrawFull(FIBITMAP *dest, int x, int y, int sX, int sY) {
 	DrawSurface(dest, x, y, sX, sY, TILE_SIZE, TILE_SIZE);
 }
 
-inline void Chipset::DrawQuarter(SDL_Surface *dest, int x, int y, int sX, int sY) {
+inline void Chipset::DrawQuarter(FIBITMAP *dest, int x, int y, int sX, int sY) {
 	DrawSurface(dest, x, y, sX, sY, HALF_TILE, HALF_TILE);
 }
 
-inline void Chipset::DrawWide(SDL_Surface *dest, int x, int y, int sX, int sY) {
+inline void Chipset::DrawWide(FIBITMAP *dest, int x, int y, int sX, int sY) {
 	DrawSurface(dest, x, y, sX, sY, TILE_SIZE, HALF_TILE);
 }
 
-inline void Chipset::DrawTall(SDL_Surface *dest, int x, int y, int sX, int sY) {
+inline void Chipset::DrawTall(FIBITMAP *dest, int x, int y, int sX, int sY) {
 	DrawSurface(dest, x, y, sX, sY, HALF_TILE, TILE_SIZE);
 }
 
-inline void Chipset::DrawEdges(SDL_Surface *dest, int x, int y, int sX, int sY, int Combination) {
+inline void Chipset::DrawEdges(FIBITMAP *dest, int x, int y, int sX, int sY, int Combination) {
 	if (Combination&BIT(0))
 		DrawQuarter(dest, x,           y,           sX,           sY);           // top left
 	if (Combination&BIT(1))

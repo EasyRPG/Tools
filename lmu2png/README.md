@@ -1,7 +1,6 @@
 # LMU2PNG
 
-LMU2PNG is a small tool to render RPG Maker 2000 and 2003 map data into PNG
-images.
+LMU2PNG is a tool to render RPG Maker 2000 and 2003 map data into PNG images.
 
 LMU2PNG is part of the EasyRPG Project.
 More information is available at the project website:
@@ -21,6 +20,7 @@ https://wiki.easyrpg.org/
  * liblcf - https://github.com/EasyRPG/liblcf
  * zlib
  * SDL2_image (enable support for at least png images)
+ * wxWidgets (optional, GUI version)
 
 
 ## Daily builds

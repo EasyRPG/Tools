@@ -17,16 +17,30 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-#include <FreeImage.h>
-#include <memory>
+// Headers
+#include <string>
 
-struct FIBITMAPDeleter {
-        void operator()(FIBITMAP* dib) {
-                FreeImage_Unload(dib);
-        }
+// Types
+using ErrorCallbackParam = void *;
+using ErrorCallbackFunc = void (*) (const std::string&, ErrorCallbackParam);
+
+using L2IConfig = struct l2i_config_t {
+	std::string database;
+	std::string chipset;
+	std::string encoding;
+	std::string map;
+	bool verbose;
+	bool no_background;
+	bool no_lowertiles;
+	bool no_uppertiles;
+	bool no_events;
+	bool ignore_conditions;
+	bool simulate_movement;
 };
-using BitmapPtr = std::unique_ptr<FIBITMAP, FIBITMAPDeleter>;
 
-void CustomAlphaCombine(FIBITMAP *src, int sLeft, int sTop, FIBITMAP *dst, int dLeft, int dTop, int width, int height);
+#ifdef WITH_GUI
+unsigned char * makeImage(L2IConfig conf, int &w, int &h, ErrorCallbackFunc error_cb,
+	ErrorCallbackParam param = nullptr);
+#endif
 
 #endif

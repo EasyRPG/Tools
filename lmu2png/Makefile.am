@@ -1,6 +1,6 @@
 argparsedir = src/external/argparse
 
-EXTRA_DIST = README.md \
+EXTRA_DIST = README.md AUTHORS.md \
 	CMakeLists.txt \
 	CMakeModules/ConfigureWindows.cmake \
 	CMakeModules/FindFreeImage.cmake \
@@ -15,6 +15,8 @@ lmu2png_SOURCES = \
 	src/chipset.cpp \
 	src/xyzplugin.h \
 	src/xyzplugin.cpp \
+	src/utils.h \
+	src/utils.cpp \
 	$(argparsedir)/argparse.hpp
 lmu2png_CXXFLAGS = \
 	-std=c++17 \

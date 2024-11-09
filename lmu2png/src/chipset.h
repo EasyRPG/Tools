@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <FreeImage.h>
-#include "main.h"
+#include "utils.h"
 
 constexpr int TILE_SIZE=16;
 constexpr int HALF_TILE=TILE_SIZE/2;

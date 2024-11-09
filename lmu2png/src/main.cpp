@@ -23,17 +23,21 @@
 #include <map>
 #include <algorithm>
 #include <argparse.hpp>
-#include <FreeImage.h>
 #include <lcf/reader_lcf.h>
 #include <lcf/ldb/reader.h>
 #include <lcf/lmu/reader.h>
+
+// Must be before FreeImage because of Windows header conflicts
+#ifdef WITH_GUI
+#	include "gui.h"
+#endif
+
+#include <FreeImage.h>
+
 #include "chipset.h"
 #include "xyzplugin.h"
 #include "main.h"
 #include "utils.h"
-#ifdef WITH_GUI
-	#include "gui.h"
-#endif
 
 void MyFreeImageMessageHandler(FREE_IMAGE_FORMAT /* fif */, const char *message) {
 	std::cout << "FreeImage error: " << message << "\n";

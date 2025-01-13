@@ -287,7 +287,7 @@ void Chipset::RenderTerrainTile(FIBITMAP *dest, unsigned short Tile, int Terrain
 						DrawWide(dest, x, y+HALF_TILE, sX+16, sY+56);
 					} else {
 						DrawTall(dest, x,           y, sX,    sY+32);
-						DrawTall(dest, x+HALF_TILE, y, sX+32, sY+32);
+						DrawTall(dest, x+HALF_TILE, y, sX+40, sY+32);
 					}
 					break;
 				case 0x01:

@@ -203,23 +203,20 @@ int main(int argc, char* argv[]) {
 		// Get palette and color count
 		png_get_PLTE(png_ptr, info_ptr, &palette, &num_palette);
 
-		// Check palette color count validity
-		if(num_palette != 256) {
-			std::cerr << "PNG file " << argv[arg]
-				<< " has lesser than 256 colors in palette."
-				<< std::endl;
-			png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
-			fclose(png_file);
-			return 1;
-		}
-
 		xyz_data = new unsigned char[768 + width * height];
 
 		// Create XYZ palette
-		for (size_t i = 0; i < 256; i++) {
+		for (size_t i = 0; i < num_palette; i++) {
 			xyz_data[i * 3] = palette[i].red;
 			xyz_data[i * 3 + 1] = palette[i].green;
 			xyz_data[i * 3 + 2] = palette[i].blue;
+		}
+
+		// Create dummy palette entries, if PNG palette has less than 256 colors
+		for (size_t i = num_palette; i < 256; i++) {
+			xyz_data[i * 3] = 0;
+			xyz_data[i * 3 + 1] = 0;
+			xyz_data[i * 3 + 2] = 0;
 		}
 
 		// Get image rows

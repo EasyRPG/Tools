@@ -35,6 +35,7 @@ target_compile_definitions(lmu2png PRIVATE
 	PACKAGE_BUGREPORT="https://github.com/EasyRPG/Tools/issues"
 	PACKAGE_URL="${PROJECT_HOMEPAGE_URL}")
 target_link_libraries(lmu2png ZLIB::ZLIB freeimage::FreeImage liblcf::liblcf)
+target_use_utf8_codepage_on_windows(lmu2png)
 
 if(wxWidgets_FOUND)
 	target_compile_definitions(lmu2png PRIVATE WITH_GUI)

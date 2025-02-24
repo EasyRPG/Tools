@@ -28,6 +28,7 @@ target_compile_definitions(lcftrans PRIVATE
 	PACKAGE_BUGREPORT="https://github.com/EasyRPG/Tools/issues"
 	PACKAGE_URL="${PROJECT_HOMEPAGE_URL}")
 target_link_libraries(lcftrans liblcf::liblcf)
+target_use_utf8_codepage_on_windows(lcftrans)
 
 include(GNUInstallDirs)
 install(TARGETS lcftrans RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

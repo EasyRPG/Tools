@@ -24,3 +24,17 @@ if(MSVC)
 	# Interpret character literals as UTF-8
 	add_compile_options("/utf-8")
 endif()
+
+# Attaches a manifest to make the active codepage UTF-8
+# Caller must ensure ${CMAKE_CURRENT_LIST_DIR}/resources exists
+function(target_use_utf8_codepage_on_windows target)
+	if(WIN32)
+		if(NOT MINGW)
+			target_sources(${target} PRIVATE "${CMAKE_CURRENT_LIST_DIR}/resources/utf8.manifest")
+		# Since CMake in MINGW doesn't support linking
+		# .manifest file, do it with .rc file
+		elseif(MINGW)
+			target_sources(${target} PRIVATE "${CMAKE_CURRENT_LIST_DIR}/resources/utf8.rc")
+		endif()
+	endif()
+endfunction()

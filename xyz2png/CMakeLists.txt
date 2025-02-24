@@ -14,6 +14,7 @@ target_compile_definitions(xyz2png PRIVATE
 	PACKAGE_BUGREPORT="https://github.com/EasyRPG/Tools/issues"
 	PACKAGE_URL="${PROJECT_HOMEPAGE_URL}")
 target_link_libraries(xyz2png PNG::PNG ZLIB::ZLIB)
+target_use_utf8_codepage_on_windows(xyz2png)
 
 include(GNUInstallDirs)
 install(TARGETS xyz2png RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

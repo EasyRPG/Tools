@@ -23,6 +23,7 @@ target_compile_definitions(lcfviz PRIVATE
 	PACKAGE_BUGREPORT="https://github.com/EasyRPG/Tools/issues"
 	PACKAGE_URL="${PROJECT_HOMEPAGE_URL}")
 target_link_libraries(lcfviz liblcf::liblcf)
+target_use_utf8_codepage_on_windows(lcfviz)
 
 include(GNUInstallDirs)
 install(TARGETS lcfviz RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

@@ -40,6 +40,7 @@ target_compile_definitions(xyzcrush PRIVATE
 	PACKAGE_BUGREPORT="https://github.com/EasyRPG/Tools/issues"
 	PACKAGE_URL="${PROJECT_HOMEPAGE_URL}")
 target_link_libraries(xyzcrush zopfli ZLIB::ZLIB)
+target_use_utf8_codepage_on_windows(xyzcrush)
 
 include(GNUInstallDirs)
 install(TARGETS xyzcrush RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

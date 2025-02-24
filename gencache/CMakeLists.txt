@@ -19,6 +19,7 @@ target_compile_definitions(gencache PRIVATE
 	PACKAGE_BUGREPORT="https://github.com/EasyRPG/Tools/issues"
 	PACKAGE_URL="${PROJECT_HOMEPAGE_URL}")
 target_link_libraries(gencache ICU::uc ICU::data nlohmann_json::nlohmann_json)
+target_use_utf8_codepage_on_windows(gencache)
 
 include(GNUInstallDirs)
 install(TARGETS gencache RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

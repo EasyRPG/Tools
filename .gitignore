@@ -50,3 +50,9 @@ lcfviz/lcfviz
 
 *.ninja
 .ninja*
+
+# VS Code
+.vscode/
+.cache/
+compile_commands.json
+build/

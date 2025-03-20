@@ -207,7 +207,7 @@ int main(int argc, char* argv[]) {
 		memset(xyz_data, 0, 768);
 
 		// Create XYZ palette
-		for (size_t i = 0; i < num_palette; i++) {
+		for (int i = 0; i < num_palette; i++) {
 			xyz_data[i * 3] = palette[i].red;
 			xyz_data[i * 3 + 1] = palette[i].green;
 			xyz_data[i * 3 + 2] = palette[i].blue;

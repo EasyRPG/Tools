@@ -356,6 +356,7 @@ static void parseEvents(Translation& t, Root& root, const F& make_info) {
 	ParseEvent<decltype(make_info)> p { t, make_info };
 
 	lcf::rpg::ForEachString(root, [&](const auto& val, const auto& ctx) {
+		(void)val;
 		if (!ctx.parent ||
 				!std::is_same<decltype(ctx.parent->obj), std::add_pointer_t<ParentType>>::value ||
 				!isEventCommandString(ctx)) {
@@ -524,7 +525,7 @@ Translation Translation::fromPO(const std::string& filename) {
 	};
 
 	auto extract_string = [&](int offset) -> std::string {
-		if (offset >= line_view.size()) {
+		if (offset >= static_cast<int>(line_view.size())) {
 			std::cerr << "Parse error (Line " << line_number << ") is empty\n";
 			return "";
 		}

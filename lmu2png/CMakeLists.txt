@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.16...3.28 FATAL_ERROR)
+
 project(lmu2png VERSION 2.0 LANGUAGES CXX
 	HOMEPAGE_URL "https://easyrpg.org/")
 

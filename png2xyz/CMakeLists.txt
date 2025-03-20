@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.16...3.28 FATAL_ERROR)
+
 project(png2xyz VERSION 1.1 LANGUAGES CXX
 	HOMEPAGE_URL "https://easyrpg.org/")
 

@@ -237,7 +237,7 @@ static BitmapPtr process(L2IConfig conf, ErrorCallbackFunc error_cb, ErrorCallba
 	return output_img;
 }
 
-static void cliErrorCallback(const std::string& error, ErrorCallbackParam param) {
+static void cliErrorCallback(const std::string& error, ErrorCallbackParam) {
 	// Simply tell about the error
 	std::cerr << error << "\n";
 }

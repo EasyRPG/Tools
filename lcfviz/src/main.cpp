@@ -13,7 +13,6 @@
 #include <fstream>
 #include <functional>
 #include <iostream>
-#include <unordered_map>
 #include <argparse.hpp>
 #include <lcf/encoder.h>
 #include <lcf/reader_util.h>
@@ -41,25 +40,6 @@ const std::string help_epilog = R"(Example usage:
 Creates an overlap-free, directed graph (for huge graphs use sfdp, not dot)
 
 )" "Homepage " PACKAGE_URL " - Report bugs at: " PACKAGE_BUGREPORT;
-
-static int print_help(char** argv) {
-	std::cerr << "lcfviz - Creates a dot file from a map tree by scanning the map for teleports.\n";
-	std::cerr << "Usage: " << argv[0] << " [OPTION...] DIRECTORY [ENCODING]\n";
-	std::cerr << "Options:\n";
-	std::cerr << "  -d, --depth DEPTH  Maximal depth from the start node (default: no limit)\n";
-	std::cerr << "                     Enables unreachable node detection (-r)\n";
-	std::cerr << "  -h, --help         This usage message\n";
-	std::cerr << "  -o, --output FILE  Output file (default: stdout)\n";
-	std::cerr << "  -r, --remove       Remove nodes that are unreachable from the start node\n";
-	std::cerr << "  -s, --start ID     Initial node of the graph (default: start party position)\n";
-	std::cerr << "\n";
-	std::cerr << "When not specified the encoding is read from RPG_RT.ini or auto-detected.\n";
-	std::cerr << "\n";
-	std::cerr << "Example usage:\n";
-	std::cerr << " lcfviz YOURGAME | dot -Goverlap=false -Gsplines=true -Tpng -o graph.png\n";
-	std::cerr << "Creates an overlap-free, directed graph (for huge graphs use sfdp, not dot)\n";
-	return 2;
-}
 
 namespace {
 	/* config */
@@ -380,6 +360,7 @@ void ParseLmt(const std::string& filename) {
 	}
 
 	lcf::rpg::ForEachString(*tree, [&](const auto& val, const auto& ctx) {
+		(void)val;
 		if (ctx.name == "name") {
 			parse_map(ctx);
 		}

@@ -249,6 +249,8 @@ void DumpLdb(const std::string& filename) {
 }
 
 void DumpLmuLmtInner(const std::string& filename, Translation& t, const std::string& poname) {
+	(void)filename;
+
 	Translation pot;
 
 	if (t.getEntries().empty()) {

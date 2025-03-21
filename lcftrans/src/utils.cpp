@@ -89,7 +89,7 @@ std::string Utils::LowerCase(const std::string& in) {
 	return data;
 }
 
-std::string Utils::RemoveControlChars(lcf::StringView s) {
+std::string Utils::RemoveControlChars(std::string_view s) {
 	// RPG_RT ignores any control characters within messages.
 	std::string out = lcf::ToString(s);
 	auto iter = std::remove_if(out.begin(), out.end(), [](const char ch) { return (ch >= 0x0 && ch <= 0x1F) || ch == 0x7F; });
@@ -131,7 +131,7 @@ bool Utils::ReadLine(std::istream& is, std::string& line_out) {
 	}
 }
 
-lcf::StringView Utils::TrimWhitespace(lcf::StringView s) {
+std::string_view Utils::TrimWhitespace(std::string_view s) {
 	size_t left = 0;
 	for (auto& c: s) {
 		if (std::isspace(static_cast<int>(c))) {

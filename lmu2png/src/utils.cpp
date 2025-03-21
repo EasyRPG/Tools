@@ -49,8 +49,8 @@ bool Exists(const std::string& filename) {
 void CollectResourcePaths(std::string& main_path) {
 	auto split_path = [](std::string path) {
 		int start = 0;
-		for (int i = 0; i <= path.size(); i++) {
-			if (path[i] == ';' || path[i] == ':' || i == path.size()) {
+		for (int i = 0; i <= static_cast<int>(path.size()); i++) {
+			if (path[i] == ';' || path[i] == ':' || i == static_cast<int>(path.size())) {
 				std::string temp;
 				temp.append(path, start, i - start);
 				resource_dirs.emplace_back(temp);

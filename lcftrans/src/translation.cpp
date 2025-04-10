@@ -317,11 +317,21 @@ public:
 			case Cmd::Maniac_ShowStringPicture: {
 				// Show String Picture
 				add_evt_entry();
-				auto tokens = Utils::Split(lcf::ToString(estring), '\x01');
-				if (tokens.size() >= 4) {
+
+				if (!estring.empty() && estring[0] == '\x01') {
+					std::string term = "";
+
+					for (size_t i = 1; i < estring.size(); ++i) {
+						char c = estring[i];
+						if (c == '\x01' || c == '\x02' || c == '\x03') {
+							break;
+						}
+						term += c;
+					}
+
 					info.push_back(make_info(ctx));
 					info.push_back("Show String Picture");
-					for (auto& line: Utils::Split(tokens[1], '\n')) {
+					for (auto& line: Utils::Split(term, '\n')) {
 						lines.push_back(Utils::RemoveControlChars(line));
 					}
 					context = "strpic";
